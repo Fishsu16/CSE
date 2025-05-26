@@ -302,7 +302,8 @@ function validateRegisterForm() {
   }
 
   if (errorMessage) {
-    registerPasswordError.textContent = errorMessage;
+    // registerPasswordError.textContent = errorMessage;
+    registerPasswordError.textContent = "1";
     registerPasswordError.style.display = "block";
     registerSubmit.disabled = true;
   } else {
@@ -339,7 +340,8 @@ registerForm.addEventListener("submit", async function (event) {
     );
     registerError.textContent = "";
   } catch (error) {
-    registerError.textContent = error.message;
+    //registerError.textContent = error.messagee
+    registerError.textContent = "2";
     qrCodeDiv.style.display = "none";
     console.error("Error:", error);
   }
