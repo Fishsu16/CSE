@@ -341,9 +341,11 @@ registerForm.addEventListener("submit", async function (event) {
     registerError.textContent = "";
   } catch (error) {
     //registerError.textContent = error.messagee
-    registerError.textContent = "2";
+    // registerError.textContent = "2";
+    registerError.textContent = "Request failed: " + error.message;
     qrCodeDiv.style.display = "none";
-    console.error("Error:", error);
+    console.error("Fetch failed:", error);
+    // console.error("Error:", error);
   }
 });
 
