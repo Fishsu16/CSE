@@ -206,7 +206,7 @@ async def encrypt_files(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
-    cert = certificate.gencsr(user_pk_pem)
+    cert = certificate.gencsr(user_sk)
 
 
     # dict 結構: {"filename": ..., "signature": ...}

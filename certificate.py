@@ -24,7 +24,8 @@ from fastapi import HTTPException
 
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
-def gencsr(user_pk: bytes) -> List[Dict[str, bytes]]:
+def gencsr(user_sk: bytes) -> List[Dict[str, bytes]]:
+    private_key = load_pem_private_key(user_sk, password=None, backend=default_backend())
     # === 1. 建立 CSR ===
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, u"TW"),
@@ -32,7 +33,7 @@ def gencsr(user_pk: bytes) -> List[Dict[str, bytes]]:
         x509.NameAttribute(NameOID.LOCALITY_NAME, u"East"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"NYCU"),
         x509.NameAttribute(NameOID.COMMON_NAME, u"Oasis_Star"),
-    ])).sign(user_pk, hashes.SHA256(), backend=default_backend())
+    ])).sign(private_key, hashes.SHA256(), backend=default_backend())
 
     csr_pem = csr.public_bytes(serialization.Encoding.PEM)
 
