@@ -206,11 +206,11 @@ async def encrypt_files(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
-    user_sk_pem = user_sk.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
-    )
+    #user_sk_pem = user_sk.private_bytes(
+    #    encoding=serialization.Encoding.PEM,
+    #    format=serialization.PrivateFormat.PKCS8,
+    #    encryption_algorithm=serialization.NoEncryption()
+    #)
     cert = certificate.gencsr(user_sk)
 
 

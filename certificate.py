@@ -31,8 +31,8 @@ import datetime
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
 
-def gencsr(user_sk: bytes) -> List[Dict[str, bytes]]:
-    private_key = load_pem_private_key(user_sk, password=None, backend=default_backend())
+def gencsr(user_sk) -> List[Dict[str, bytes]]:
+    private_key = load_der_private_key(user_sk, password=None, backend=default_backend())
     # === 1. 建立 CSR ===
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, u"TW"),
