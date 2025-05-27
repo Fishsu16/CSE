@@ -1,8 +1,10 @@
 from typing import List, Dict, Optional
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
 import requests
 from fastapi import HTTPException
 #from fastapi import APIRouter, Depends, HTTPException, Query
@@ -23,6 +25,7 @@ from fastapi import HTTPException
 #from auth import router as auth_router
 
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
+
 
 def gencsr(user_sk: bytes) -> List[Dict[str, bytes]]:
     private_key = load_pem_private_key(user_sk, password=None, backend=default_backend())
@@ -82,16 +85,17 @@ def gencsr(user_sk: bytes) -> List[Dict[str, bytes]]:
 #    )
 #
 #@auth_router.post("/verify-cert")
-#def verify_cert(data: CertVerifyRequest):
+##def verify_cert(data: CertVerifyRequest):
+#def verify_cert(client_cert):
 #    try:
 #        # 載入使用者憑證
-#        client_cert = load_cert_from_pem(data.client_cert_pem)
+#        #client_cert = load_cert_from_pem(data.client_cert_pem)
 #
 #        # 從 CA server 下載 intermediate cert
 #        intermediate_cert = load_cert_from_url("https://certificate-ed4n.onrender.com/api/intermediate_cert")
 #
 #        # 載入 Root CA cert（本地信任）
-#        root_cert = load_cert_from_pem(open("CA_server/ca/root/root.cert.pem", "r").read())
+#        root_cert = load_cert_from_pem(open("/CA_server/ca/root/root.cert.pem", "r").read())
 #
 #        # 驗證 client cert 是否由 intermediate 簽發
 #        verify_certificate_chain(client_cert, intermediate_cert)

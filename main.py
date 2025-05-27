@@ -273,6 +273,11 @@ async def decrypt_files(
         #    raise HTTPException(status_code=400, detail="certificate遺失")
         #cert = zip_file.read("certificate.pem")
         #try:
+        #    verify_status = certificate.verify_cert(cert)
+        #    if verify["status"] != "success":
+        #        raise HTTPException(status_code=400, detail="Certificate驗證失敗")
+        #    else:
+        #
 
        # except Exception as e:
 
