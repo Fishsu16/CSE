@@ -5,12 +5,16 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.base import Certificate
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_der_private_key
 import requests
 from fastapi import HTTPException
 from pydantic import BaseModel
-from cryptography.x509.base import Certificate
-from cryptography.hazmat.primitives.asymmetric import padding
 import datetime
+#################################################
+
+#################################################
 #from fastapi import APIRouter, Depends, HTTPException, Query
 #from fastapi.responses import JSONResponse
 #from sqlalchemy.ext.asyncio import AsyncSession
