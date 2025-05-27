@@ -13,7 +13,7 @@ import kms
 from models import User, get_db
 from auth import router as auth_router
 
-const api_url = "https://certificate-ed4n.onrender.com/api/issue"
+api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
 def gencsr(user_pk: bytes) -> List[Dict[str, bytes]]:
     # === 1. 建立 CSR ===
