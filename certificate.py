@@ -68,7 +68,7 @@ def gencsr(user_sk) -> List[Dict[str, bytes]]:
         #    "content": content
         #})
     else:
-        raise HTTPException(status_code=response.status_code, detail=response.content)
+        raise HTTPException(status_code=response.status_code, detail=response.content.decode('utf-8'))
 
     return [certificate_files]
 
