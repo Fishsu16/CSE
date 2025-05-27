@@ -1,17 +1,26 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-import pyotp
-import base64
-import qrcode
-from io import BytesIO
-import hashlib
+from typing import List, Dict, Optional
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.backends import default_backend
+import requests
+from fastapi import HTTPException
+#from fastapi import APIRouter, Depends, HTTPException, Query
+#from fastapi.responses import JSONResponse
+#from sqlalchemy.ext.asyncio import AsyncSession
+#from sqlalchemy import select
+#from typing import List
+#import shutil
+#import os
+#import pyotp
+#import base64
+#import qrcode
+#from io import BytesIO
+#import hashlib
 
-import kms
-from models import User, get_db
-from auth import router as auth_router
+#import kms
+#from models import User, get_db
+#from auth import router as auth_router
 
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
