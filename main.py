@@ -13,10 +13,11 @@ from sqlalchemy import Tuple, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Base, engine
-from auth import router as auth_router
+
 
 import kms
 from models import User, get_db
+import certificate
 
 #################################################
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -193,7 +194,7 @@ async def encrypt_files(
     )
     # dict 結構: {"filename": "file.txt", "content": b"...encrypted..."}
 
-    # 3. 取得簽名用的金鑰
+    # 3. 取得簽名用的金鑰與產生cert
     user_pk, user_sk = await get_user_keys(username=username, db=db)
     signatures: List[dict] = sign_encrypted_files(
         user_sk=user_sk, encrypted_files=encrypted_files
@@ -204,6 +205,8 @@ async def encrypt_files(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
+    cert = certificate.gencsr(user_pk)
+
 
     # dict 結構: {"filename": ..., "signature": ...}
 
@@ -223,6 +226,7 @@ async def encrypt_files(
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
                 sub_zip.writestr("verify.key", user_pk_pem)
+                sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
 
             sub_zip_buffer.seek(0)
             outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
