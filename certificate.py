@@ -66,7 +66,7 @@ def gencsr(user_sk) -> List[Dict[str, bytes]]:
     else:
         raise HTTPException(status_code=response.status_code, detail=response.content)
 
-    return certificate_files
+    return [certificate_files]
 
 class CertVerifyRequest(BaseModel):
     client_cert_pem: str  # 使用者憑證 PEM 字串

@@ -274,36 +274,35 @@ async def decrypt_files(
 
         # YU modified
         # 檢驗憑證與抽取sender public key
-        #if "certificate.pem" not in namelist:
-        #    raise HTTPException(status_code=400, detail="certificate遺失")
-        #cert = zip_file.read("certificate.pem")
-        #try:
-        #    verify_status = certificate.verify_cert(cert)
-        #    if verify["status"] != "success":
-        #        raise HTTPException(status_code=400, detail="Certificate驗證失敗")
-        #    else:
-        #        public_key_pem = verify_status["public_key"]
-
-        #except Exception as e:
-        #    raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
-        #try:
-        #    public_key = serialization.load_pem_public_key(
-        #        public_key_pem, backend=default_backend()
-        #    )
-        #except Exception as e:
-        #    raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
-
-        # 讀 verify.key (PEM 格式公鑰)
-        if "verify.key" not in namelist:
-            raise HTTPException(status_code=400, detail="verify.key遺失")
-
-        verify_key_pem = zip_file.read("verify.key")
+        if "certificate.pem" not in namelist:
+            raise HTTPException(status_code=400, detail="certificate遺失")
+        cert = zip_file.read("certificate.pem")
+        try:
+            verify_status = certificate.verify_cert(cert)
+            if verify_status["status"] != "success":
+                raise HTTPException(status_code=400, detail="Certificate驗證失敗")
+            else:
+                public_key_pem = verify_status["public_key"]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
         try:
             public_key = serialization.load_pem_public_key(
-                verify_key_pem, backend=default_backend()
+                public_key_pem, backend=default_backend()
             )
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Load verify.key failed: {e}")
+            raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
+
+        # 讀 verify.key (PEM 格式公鑰)
+        #if "verify.key" not in namelist:
+        #    raise HTTPException(status_code=400, detail="verify.key遺失")
+#
+        #verify_key_pem = zip_file.read("verify.key")
+        #try:
+        #    public_key = serialization.load_pem_public_key(
+        #        verify_key_pem, backend=default_backend()
+        #    )
+        #except Exception as e:
+        #    raise HTTPException(status_code=400, detail=f"Load verify.key failed: {e}")
 
         # 找出 aes_key 檔
         aes_key_name = f"{username}.key.enc"
