@@ -302,8 +302,7 @@ function validateRegisterForm() {
   }
 
   if (errorMessage) {
-    // registerPasswordError.textContent = errorMessage;
-    registerPasswordError.textContent = "1";
+    registerPasswordError.textContent = errorMessage;
     registerPasswordError.style.display = "block";
     registerSubmit.disabled = true;
   } else {
@@ -340,12 +339,12 @@ registerForm.addEventListener("submit", async function (event) {
     );
     registerError.textContent = "";
   } catch (error) {
-    //registerError.textContent = error.messagee
+    registerError.textContent = error.messagee
     // registerError.textContent = "2";
-    registerError.textContent = "Request failed: " + error.message;
+    // registerError.textContent = "Request failed: " + error.message;
     qrCodeDiv.style.display = "none";
-    console.error("Fetch failed:", error);
-    // console.error("Error:", error);
+    // console.error("Fetch failed:", error);
+    console.error("Error:", error);
   }
 });
 
