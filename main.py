@@ -266,6 +266,15 @@ async def decrypt_files(
     with zipfile.ZipFile(zip_buffer, "r") as zip_file:
         namelist = zip_file.namelist()
 
+        # YU modified
+        # 檢驗憑證
+        if "certificate.pem" not in namelist:
+            raise HTTPException(status_code=400, detail="certificate遺失")
+        cert = zip_file.read("certificate.pem")
+        try:
+
+        except Exception as e:
+
         # 讀 verify.key (PEM 格式公鑰)
         if "verify.key" not in namelist:
             raise HTTPException(status_code=400, detail="verify.key遺失")

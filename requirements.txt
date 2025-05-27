@@ -11,3 +11,4 @@ python-dotenv
 jinja2
 pydantic[email]
 qrcode[pil]
+requests
