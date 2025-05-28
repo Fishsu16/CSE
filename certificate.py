@@ -1,10 +1,8 @@
 from typing import List, Dict, Optional
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.base import Certificate
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_der_private_key
@@ -12,25 +10,6 @@ import requests
 from fastapi import HTTPException
 from pydantic import BaseModel
 import datetime
-#################################################
-
-#################################################
-#from fastapi import APIRouter, Depends, HTTPException, Query
-#from fastapi.responses import JSONResponse
-#from sqlalchemy.ext.asyncio import AsyncSession
-#from sqlalchemy import select
-#from typing import List
-#import shutil
-#import os
-#import pyotp
-#import base64
-#import qrcode
-#from io import BytesIO
-#import hashlib
-
-#import kms
-#from models import User, get_db
-#from auth import router as auth_router
 
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
@@ -63,10 +42,6 @@ def gencsr(user_sk) -> List[Dict[str, bytes]]:
         content = response.content
         certificate_files = {"filename": filename, "content": content}
         print("✅ 憑證已簽發並儲存為 certificate.pem")
-        #certificate_files.append({
-        #    "filename": filename,
-        #    "content": content
-        #})
     else:
         raise HTTPException(status_code=response.status_code, detail=response.content.decode('utf-8'))
 
@@ -92,13 +67,8 @@ def verify_certificate_chain(cert: Certificate, issuer: Certificate):
         cert.signature_hash_algorithm,
     )
 
-#@auth_router.post("/verify-cert")
-#def verify_cert(data: CertVerifyRequest):
 def verify_cert(client_cert):
     try:
-        # 載入使用者憑證
-        #client_cert = load_cert_from_pem(data.client_cert_pem)
-
         # 從 CA server 下載 intermediate cert
         intermediate_cert = load_cert_from_url("https://certificate-ed4n.onrender.com/api/intermediate_cert")
 

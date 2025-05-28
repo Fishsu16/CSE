@@ -197,6 +197,7 @@ async def encrypt_files(
     )
     # dict 結構: {"filename": "file.txt", "content": b"...encrypted..."}
 
+    # YU modified
     # 3. 取得簽名用的金鑰與產生cert
     user_pk, user_sk = await get_user_keys(username=username, db=db)
     signatures: List[dict] = sign_encrypted_files(
@@ -207,11 +208,6 @@ async def encrypt_files(
     #).public_bytes(
     #    encoding=serialization.Encoding.PEM,
     #    format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    #)
-    #user_sk_pem = user_sk.private_bytes(
-    #    encoding=serialization.Encoding.PEM,
-    #    format=serialization.PrivateFormat.PKCS8,
-    #    encryption_algorithm=serialization.NoEncryption()
     #)
     try:
         cert = certificate.gencsr(user_sk)
@@ -239,8 +235,8 @@ async def encrypt_files(
 
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
-                #sub_zip.writestr("verify.key", user_pk_pem)
                 # YU modified
+                #sub_zip.writestr("verify.key", user_pk_pem)
                 sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
 
             sub_zip_buffer.seek(0)
