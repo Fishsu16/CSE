@@ -11,6 +11,8 @@ import shutil
 import os
 from sqlalchemy import Tuple, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
 from models import Base, engine
 from auth import router as auth_router
@@ -283,8 +285,9 @@ async def decrypt_files(
         if "certificate.pem" not in namelist:
             raise HTTPException(status_code=400, detail="certificate遺失")
         cert = zip_file.read("certificate.pem")
+        cert_obj = x509.load_pem_x509_certificate(cert, default_backend())
         try:
-            verify_status = certificate.verify_cert(cert)
+            verify_status = certificate.verify_cert(cert_obj)
             if verify_status["status"] != "success":
                 raise HTTPException(status_code=400, detail="Certificate驗證失敗")
             else:
