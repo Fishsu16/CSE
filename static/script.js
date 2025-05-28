@@ -137,25 +137,36 @@ uploadButton.addEventListener("click", () => {
       method: "POST",
       body: formData,
     })
-      .then((response) => {
-        if (!response.ok) throw new Error("Encryption failed");
-        return response.blob(); // ZIP file
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "encrypted_package.zip";
-        link.click();
-        URL.revokeObjectURL(url);
-        alert("Files encrypted and downloaded successfully!");
-        fileList.innerHTML = "";
-        uploadButton.style.display = "none";
-        filesToUpload = [];
+      //.then((response) => {
+      //  if (!response.ok) throw new Error("Encryption failed");
+      //  return response.blob(); // ZIP file
+      //})
+      //.then((blob) => {
+      //  const url = URL.createObjectURL(blob);
+      //  const link = document.createElement("a");
+      //  link.href = url;
+      //  link.download = "encrypted_package.zip";
+      //  link.click();
+      //  URL.revokeObjectURL(url);
+      //  alert("Files encrypted and downloaded successfully!");
+      //  fileList.innerHTML = "";
+      //  uploadButton.style.display = "none";
+      //  filesToUpload = [];
+      //})
+      //.catch((error) => {
+      //  console.error("Error:", error);
+      //  alert("Encryption failed. Please try again.");
+      //});
+      .then(async (response) => {
+        const text = await response.text();
+        if (!response.ok) {
+          console.error("🔴 後端錯誤內容：", text);
+          throw new Error("Encryption failed: " + text);
+        }
+        return new Blob([text]); // 或 return response.blob(); 視後端實作而定
       })
       .catch((error) => {
-        console.error("Error:", error);
-        alert("Encryption failed. Please try again.");
+        console.error("❌ 加密失敗：", error.message);
       });
   }
 });
