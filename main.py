@@ -211,7 +211,7 @@ async def encrypt_files(
     #    format=serialization.PrivateFormat.PKCS8,
     #    encryption_algorithm=serialization.NoEncryption()
     #)
-    #cert = certificate.gencsr(user_sk)
+    cert = certificate.gencsr(user_sk)
 
 
     # dict 結構: {"filename": ..., "signature": ...}
