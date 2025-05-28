@@ -211,7 +211,13 @@ async def encrypt_files(
     #    format=serialization.PrivateFormat.PKCS8,
     #    encryption_algorithm=serialization.NoEncryption()
     #)
-    cert = certificate.gencsr(user_sk)
+    try:
+        cert = certificate.gencsr(user_sk)
+    except Exception as e:
+        import traceback
+        print("[/api/encrypt] Encryption failed:", e)
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
     # dict 結構: {"filename": ..., "signature": ...}
