@@ -103,7 +103,7 @@ def verify_cert(client_cert):
         intermediate_cert = load_cert_from_url("https://certificate-ed4n.onrender.com/api/intermediate_cert")
 
         # 載入 Root CA cert（本地信任）
-        root_cert = load_cert_from_pem(open("/CA_server/ca/root/root.cert.pem", "r").read())
+        root_cert = load_cert_from_pem(open("/ca/root/root.cert.pem", "r").read())
 
         # 驗證 client cert 是否由 intermediate 簽發
         verify_certificate_chain(client_cert, intermediate_cert)

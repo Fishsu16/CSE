@@ -200,12 +200,12 @@ async def encrypt_files(
     signatures: List[dict] = sign_encrypted_files(
         user_sk=user_sk, encrypted_files=encrypted_files
     )
-    user_pk_pem = serialization.load_der_public_key(
-        user_pk, backend=default_backend()
-    ).public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    )
+    #user_pk_pem = serialization.load_der_public_key(
+    #    user_pk, backend=default_backend()
+    #).public_bytes(
+    #    encoding=serialization.Encoding.PEM,
+    #    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    #)
     #user_sk_pem = user_sk.private_bytes(
     #    encoding=serialization.Encoding.PEM,
     #    format=serialization.PrivateFormat.PKCS8,
@@ -237,7 +237,7 @@ async def encrypt_files(
 
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
-                sub_zip.writestr("verify.key", user_pk_pem)
+                #sub_zip.writestr("verify.key", user_pk_pem)
                 # YU modified
                 sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
 
