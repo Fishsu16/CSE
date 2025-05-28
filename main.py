@@ -239,7 +239,7 @@ async def encrypt_files(
                 sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
                 sub_zip.writestr("verify.key", user_pk_pem)
                 # YU modified
-                #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+                sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
 
             sub_zip_buffer.seek(0)
             outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
