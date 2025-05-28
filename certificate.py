@@ -121,7 +121,7 @@ def verify_cert(client_cert):
         public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
-        ).decode("utf-8")
+        )
 
     except requests.HTTPError:
         raise HTTPException(status_code=502, detail="Failed to download intermediate certificate from CA server")
