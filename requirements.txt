@@ -12,4 +12,4 @@ jinja2
 pydantic[email]
 qrcode[pil]
 requests
-pqcrypto
+pqcrypto==1.1
