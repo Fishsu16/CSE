@@ -1,4 +1,4 @@
-from pqcrypto.kem.kyber512 import generate_keypair, encrypt, decrypt
+from pqclean.kem import kyber512
 from pqclean.sign import dilithium2
 from Crypto.Cipher import ChaCha20_Poly1305
 from Crypto.Random import get_random_bytes
@@ -12,15 +12,16 @@ from cryptography.x509.base import Certificate
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_der_private_key
 import requests
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel
 import datetime
+import os
 
 #####################################################################################
 #              Key Exchange with Kyber & Encrypt with ChaCha20                      #
 #####################################################################################
 def kyber_keygen():
-    public_key, secret_key = generate_keypair()
+    public_key, secret_key = kyber512.generate_keypair()
     return public_key, secret_key
 
 async def get_kyber_keys(username: str, db: AsyncSession):
@@ -34,16 +35,17 @@ async def get_kyber_keys(username: str, db: AsyncSession):
     return kyber_pk, kyber_sk
 
 # 🔒 用 Kyber 加密資料（封裝 symmetric key，並用 AES-GCM 加密資料）
-def kyber_kem(data: bytes, public_key: bytes):
-    # 1. 用 Kyber 封裝一個對稱金鑰
-    encapsulated_key, shared_secret = encrypt(public_key)
-    chacha_key = shared_secret[:32]  # 取前 32 bytes 當作 chacha20_poly1305 金鑰
-
-    # 3. 回傳封裝key和shared secret
+def kyber_kem(public_key: bytes):
+    encapsulated_key, shared_secret = kyber512.encrypt(public_key)
     return {
         "encapsulated_key": base64.b64encode(encapsulated_key).decode(),
         "shared_secret": base64.b64encode(shared_secret).decode()
     }
+
+# 解封裝
+def kyber_decapsulate(encapsulated_key: bytes, secret_key: bytes):
+    shared_secret = kyber512.decrypt(base64.b64decode(encapsulated_key), secret_key)
+    return base64.b64encode(shared_secret).decode()
 
 async def get_kyber_keys(username: str, db: AsyncSession):
     result = await db.execute(select(User).where(User.username == username))
