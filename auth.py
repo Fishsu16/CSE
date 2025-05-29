@@ -13,7 +13,7 @@ import hashlib
 import kms
 from models import User, get_db
 # YU modified
-import kyber
+import pqc
 
 router = APIRouter()
 
@@ -52,7 +52,7 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
 
     user_pk, user_sk = kms.create_user_keys(tag=f"user-key-{username}")
     # YU modified
-    #kyber_pk, kyber_sk = kyber.keygen()
+    #kyber_pk, kyber_sk = pqc.keygen()
     kyber_pk, kyber_sk = "", ""
     dilithium_pk, dilithium_sk = "", ""
     new_user = User(
