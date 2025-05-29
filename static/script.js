@@ -157,17 +157,6 @@ uploadButton.addEventListener("click", () => {
         console.error("Error:", error);
         alert("Encryption failed. Please try again.");
       });
-      //.then(async (response) => {
-      //  const text = await response.text();
-      //  if (!response.ok) {
-      //    console.error("🔴 後端錯誤內容：", text);
-      //    throw new Error("Encryption failed: " + text);
-      //  }
-      //  return new Blob([text]); // 或 return response.blob(); 視後端實作而定
-      //})
-      //.catch((error) => {
-      //  console.error("❌ 加密失敗：", error.message);
-      //});
   }
 });
 

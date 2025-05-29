@@ -8,9 +8,12 @@ import base64
 import qrcode
 from io import BytesIO
 import hashlib
+#test
 
 import kms
 from models import User, get_db
+# YU modified
+import kyber
 
 router = APIRouter()
 
@@ -48,6 +51,10 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
 
     user_pk, user_sk = kms.create_user_keys(tag=f"user-key-{username}")
+    # YU modified
+    #kyber_pk, kyber_sk = kyber.keygen()
+    kyber_pk, kyber_sk = "", ""
+    dilithium_pk, dilithium_sk = "", ""
     new_user = User(
         username=username,
         email=email,
@@ -55,6 +62,10 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
         otp_secret=otp_secret,
         user_sk=user_sk,
         user_pk=user_pk,
+        kyber_pk=kyber_pk,
+        kyber_sk=kyber_sk,
+        dilithium_pk=dilithium_pk,
+        dilithium_sk=dilithium_sk,
     )
     db.add(new_user)
     await db.commit()
