@@ -1,5 +1,6 @@
-from pqclean.kem import kyber512
-from pqclean.sign import dilithium2
+#from pqclean.kem import kyber512
+#from pqclean.sign import dilithium2
+from pqclean import bindings
 from Crypto.Cipher import ChaCha20_Poly1305
 from Crypto.Random import get_random_bytes
 import base64
@@ -17,11 +18,15 @@ from pydantic import BaseModel
 import datetime
 import os
 
+# 初始化 Kyber 與 Dilithium（你也可以改用 Kyber768 / Dilithium3 等）
+kyber = bindings.KEM('Kyber512')
+dilithium = bindings.Signature('Dilithium2')
+
 #####################################################################################
 #              Key Exchange with Kyber & Encrypt with ChaCha20                      #
 #####################################################################################
 def kyber_keygen():
-    public_key, secret_key = kyber512.generate_keypair()
+    public_key, secret_key = kyber512.keypair()
     return public_key, secret_key
 
 async def get_kyber_keys(username: str, db: AsyncSession):
@@ -36,7 +41,7 @@ async def get_kyber_keys(username: str, db: AsyncSession):
 
 # 🔒 用 Kyber 加密資料（封裝 symmetric key，並用 AES-GCM 加密資料）
 def kyber_kem(public_key: bytes):
-    encapsulated_key, shared_secret = kyber512.encrypt(public_key)
+    encapsulated_key, shared_secret = kyber.enc(public_key)
     return {
         "encapsulated_key": base64.b64encode(encapsulated_key).decode(),
         "shared_secret": base64.b64encode(shared_secret).decode()
@@ -44,7 +49,7 @@ def kyber_kem(public_key: bytes):
 
 # 解封裝
 def kyber_decapsulate(encapsulated_key: bytes, secret_key: bytes):
-    shared_secret = kyber512.decrypt(base64.b64decode(encapsulated_key), secret_key)
+    shared_secret = kyber.dec(base64.b64decode(encapsulated_key), secret_key)
     return base64.b64encode(shared_secret).decode()
 
 async def get_kyber_keys(username: str, db: AsyncSession):
@@ -78,7 +83,7 @@ async def encrypt_files_with_ChaCha20_Poly1305(files: List[UploadFile], ChaCha20
 #                            Signature with Dilithium                               #
 #####################################################################################
 def dilithium_keygen():
-    public_key, secret_key = dilithium2.generate_keypair()
+    public_key, secret_key = dilithium.keypair()
     return public_key, secret_key
 
 async def get_dilithium_keys(username: str, db: AsyncSession):
@@ -101,7 +106,7 @@ def dilithium_sign_encrypted_files(
         encrypted_data = file["content"]
         filename = file["filename"]
 
-        signature = dilithium2.sign(encrypted_data, secret_key)
+        signature = dilithium.sign(encrypted_data, user_sk)
         #print("Signature:", signature.hex())
 
         # 儲存 filename 與對應簽章 (base64 編碼可讀性更好)
