@@ -19,7 +19,7 @@ from auth import router as auth_router
 
 import kms
 from models import User, get_db
-import certificat
+import certificate
 import pqc
 import AES_RSA
 
