@@ -13,4 +13,3 @@ pydantic[email]
 qrcode[pil]
 requests
 pqcrypto
-pqclean
