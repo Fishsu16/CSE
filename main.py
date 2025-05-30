@@ -411,6 +411,9 @@ async def encrypt_files(
     recipient_list = json.loads(recipients)
     all_recipients = [username] + recipient_list  # 包含自己
 
+    # 1. 
+
+
     # 1. 產生 AES 金鑰
     AES_key: bytes = kms.generate_AES_key()
 

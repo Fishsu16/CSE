@@ -14,3 +14,4 @@ qrcode[pil]
 requests
 dilithium-py
 kyber-py
+pycryptodome
