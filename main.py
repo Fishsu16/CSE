@@ -426,7 +426,7 @@ async def pqc_encrypt_files(
                 # 2.1 生成 AES_KEY 並加密 AES_KEY
                 kem_results = pqc.kyber_kem(recipient_pk)
                 ChaCha_key: bytes = kem_results["shared_secret"]
-                enc_ChaCha_key = kem_results["encapsulated_key"]
+                enc_ChaCha_key: bytes = kem_results["encapsulated_key"]
                 # 2.2 加密檔案
                 encrypted_files: List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
                     files, ChaCha_key
@@ -514,7 +514,7 @@ async def pqc_decrypt_files(
         ChaCha_key_enc = zip_file.read(ChaCha_key_name)
 
         try:
-            ChaCha_key = pqc.kyber_decapsulate(bytes.fromhex(ChaCha_key_enc), kyber_sk)
+            ChaCha_key = pqc.kyber_decapsulate(ChaCha_key_enc, kyber_sk)
         except Exception as e:
             raise HTTPException(
                 status_code=400,

@@ -57,7 +57,7 @@ def kyber_kem(public_key: bytes):
     shared_secret, encapsulated_key = kyber.encaps(public_key)
     print(type(shared_secret), type(encapsulated_key))
     return {
-        "encapsulated_key": encapsulated_key.hex(), #base64.b64encode(encapsulated_key).decode("utf-8"),
+        "encapsulated_key": encapsulated_key, #base64.b64encode(encapsulated_key).decode("utf-8"),
         "shared_secret": shared_secret #base64.b64encode(shared_secret).decode("utf-8")
     }
 
