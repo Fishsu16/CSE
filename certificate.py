@@ -14,6 +14,10 @@ import datetime
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
 
+
+#####################################################################################
+#                                   RSA Certificate                                 #
+#####################################################################################
 def gencsr(user_sk) -> List[Dict[str, bytes]]:
     private_key = load_der_private_key(user_sk, password=None, backend=default_backend())
     # === 1. 建立 CSR ===
@@ -28,8 +32,6 @@ def gencsr(user_sk) -> List[Dict[str, bytes]]:
     csr_pem = csr.public_bytes(serialization.Encoding.PEM)
 
     # === 2. 發送 CSR 給 CA Server ===
-    #api_url = "https://certificate-ed4n.onrender.com/api/issue"
-
     response = requests.post(
         api_url,
         files={"file": ("csr.pem", csr_pem, "application/x-pem-file")},
@@ -105,3 +107,9 @@ def verify_cert(client_cert):
     return {"status": "success",
             "message": "Certificate is valid and trusted.",
             "public_key": public_key_pem}
+
+
+
+#####################################################################################
+#                               Dilithium Certificate                               #
+#####################################################################################

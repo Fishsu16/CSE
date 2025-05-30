@@ -536,7 +536,7 @@ async def pqc_decrypt_files(
 
             # 驗簽
             is_valid = pqc.dilithium_sign_verify(msg, sender_kyber_pk, signature)
-            if (!is_valid):
+            if not is_valid:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Signature verification失敗， {enc_filename} 可能遭到竄改",
