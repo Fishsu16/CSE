@@ -422,15 +422,15 @@ async def pqc_encrypt_files(
             recipient_pk, _ = await pqc.get_kyber_keys(username=recipient, db=db)
             # 2.1 生成 AES_KEY 並加密 AES_KEY
             kem_results = pqc.kyber_kem(recipient_pk)
-            AES_key: bytes = kem_results["shared_secret"]
-            enc_AES_key = kem_results["encapsulated_key"]
+            ChaCha_key: bytes = kem_results["shared_secret"]
+            enc_ChaCha_key = kem_results["encapsulated_key"]
             # 2.2 加密檔案
             encrypted_files: List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
-                files, AES_key
+                files, ChaCha_key
             )
             # 2.3 產生加密檔案簽章
             #recipient_dili_pk, _ = await pqc.get_dilithium_keys(username=username, db=db)
-            signatures: List[dict] = pqc.sdilithium_sign_encrypted_files(
+            signatures: List[dict] = pqc.dilithium_sign_encrypted_files(
                 user_sk=dili_sk, encrypted_files=encrypted_files
             )
             # 2.4 產生憑證
@@ -439,7 +439,7 @@ async def pqc_encrypt_files(
             for file in encrypted_files:
                 sub_zip.writestr(file["filename"], file["content"])
             sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
-            sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
+            sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
             #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
 
         sub_zip_buffer.seek(0)
@@ -546,10 +546,7 @@ async def pqc_decrypt_files(
         raise HTTPException(status_code=400, detail="No file uploaded")
 
     # 1. 從 DB 取該使用者的私鑰（用來解密 AES key）
-    user_pk_bytes, user_sk_bytes = await AES_RSA.get_user_keys(username, db)
-    private_key = serialization.load_der_private_key(
-        user_sk_bytes, password=None, backend=default_backend()
-    )
+    kyber_pk, kyber_sk = await pqc.get_kyber_keys(username, db)
 
     # 2. 讀取上傳的 zip 檔
     file_bytes = await file.read()
@@ -559,29 +556,55 @@ async def pqc_decrypt_files(
     signatures = None
     AES_key = None
 
+    # 3. 解壓縮
     with zipfile.ZipFile(zip_buffer, "r") as zip_file:
         namelist = zip_file.namelist()
 
-        # YU modified
-        # 檢驗憑證與抽取sender public key
-        if "certificate.pem" not in namelist:
-            raise HTTPException(status_code=400, detail="certificate遺失")
-        cert = zip_file.read("certificate.pem")
-        cert_obj = x509.load_pem_x509_certificate(cert, default_backend())
+        # 3.1 檢驗憑證與抽取sender public key
+
+        # 3.2 ChaCha20 encrypt key
+        ChaCha_key_name = f"{username}.key.enc"
+        if ChaCha_key_name not in namelist:
+            raise HTTPException(
+                status_code=400, detail=f"{username}.key.enc 加密過屬於您的解密鑰遺失"
+            )
+        ChaCha_key_enc = zip_file.read(ChaCha_key_name)
+
         try:
-            verify_status = certificate.verify_cert(cert_obj)
-            if verify_status["status"] != "success":
-                raise HTTPException(status_code=400, detail="Certificate驗證失敗")
-            else:
-                public_key_pem = verify_status["public_key"]
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
-        try:
-            public_key = serialization.load_pem_public_key(
-                public_key_pem, backend=default_backend()
+            ChaCha_key = private_key.decrypt(
+                ChaCha_key_enc,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None,
+                ),
             )
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
+            )
+
+        # YU modified
+        ## 檢驗憑證與抽取sender public key
+        #if "certificate.pem" not in namelist:
+        #    raise HTTPException(status_code=400, detail="certificate遺失")
+        #cert = zip_file.read("certificate.pem")
+        #cert_obj = x509.load_pem_x509_certificate(cert, default_backend())
+        #try:
+        #    verify_status = certificate.verify_cert(cert_obj)
+        #    if verify_status["status"] != "success":
+        #        raise HTTPException(status_code=400, detail="Certificate驗證失敗")
+        #    else:
+        #        public_key_pem = verify_status["public_key"]
+        #except Exception as e:
+        #    raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
+        #try:
+        #    public_key = serialization.load_pem_public_key(
+        #        public_key_pem, backend=default_backend()
+        #    )
+        #except Exception as e:
+        #    raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
 
         # 讀 verify.key (PEM 格式公鑰)
         #if "verify.key" not in namelist:
