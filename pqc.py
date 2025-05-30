@@ -46,8 +46,8 @@ async def get_kyber_keys(username: str, db: AsyncSession):
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=400, detail="Username not found")
-    kyber_pk = user.kyber_pk
-    kyber_sk = user.kyber_sk
+    kyber_pk = bytes.fromhex(user.kyber_pk)
+    kyber_sk = bytes.fromhex(user.kyber_sk)
 
     return kyber_pk, kyber_sk
 
@@ -94,8 +94,8 @@ async def get_dilithium_keys(username: str, db: AsyncSession):
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=400, detail="Username not found")
-    dilithium_pk = user.dilithium_pk
-    dilithium_sk = user.dilithium_sk
+    dilithium_pk = bytes.fromhex(user.dilithium_pk)
+    dilithium_sk = bytes.fromhex(user.dilithium_sk)
 
     return dilithium_pk, dilithium_sk
 

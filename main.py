@@ -421,11 +421,11 @@ async def pqc_encrypt_files(
         for recipient in all_recipients:
             recipient_pk, _ = await pqc.get_kyber_keys(username=recipient, db=db)
             # 2.1 生成 AES_KEY 並加密 AES_KEY
-            kem_results = pqc.kyber_kem(bytes.fromhex(recipient_pk))
+            kem_results = pqc.kyber_kem(recipient_pk)
             AES_key: bytes = kem_results["shared_secret"]
             enc_AES_key = kem_results["encapsulated_key"]
             # 2.2 加密檔案
-            encrypted_files = List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
+            encrypted_files: List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
                 files, AES_key
             )
             # 2.3 產生加密檔案簽章
