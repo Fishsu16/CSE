@@ -426,7 +426,7 @@ async def pqc_encrypt_files(
             enc_AES_key = kem_results["encapsulated_key"]
             # 2.2 加密檔案
             encrypted_files = List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
-                files=files, AES_key=AES_key
+                files, AES_key
             )
             # 2.3 產生加密檔案簽章
             #recipient_dili_pk, _ = await pqc.get_dilithium_keys(username=username, db=db)
