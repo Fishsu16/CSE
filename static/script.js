@@ -250,7 +250,7 @@ document
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Login failed 253");
       }
 
       // 登入成功，儲存狀態
@@ -266,7 +266,7 @@ document
       showSection("home");
     } catch (error) {
       loginError.textContent = error.message;
-      console.error("Error:", error);
+      console.error("269 Error:", error);
     }
   });
 
