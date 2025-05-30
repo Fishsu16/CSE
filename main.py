@@ -444,6 +444,7 @@ async def pqc_encrypt_files(
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
                 #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+                sub_zip.writestr("verify.key", dili_pk.hex())
 
             sub_zip_buffer.seek(0)
             outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
@@ -497,6 +498,12 @@ async def pqc_decrypt_files(
         namelist = zip_file.namelist()
 
         # 3.1 檢驗憑證與抽取sender public key
+        if "verfy.key" not in namelist:
+            raise HTTPException(
+                status_code=400, detail=f"verify.key 解密shared_key的密鑰遺失"
+            )
+        sender_dili_key_hex = zip_file.read("verify.key")
+        sender_dili_key = bytes.fromhex(sender_dili_key_hex)
 
         # 3.2 ChaCha20 encrypt key
         ChaCha_key_name = f"{username}.key.enc"
@@ -535,7 +542,7 @@ async def pqc_decrypt_files(
             signature = base64.b64decode(signature_b64)
 
             # 驗簽
-            is_valid = pqc.dilithium_sign_verify(bytes.fromhex(enc_content), sender_kyber_pk, signature)
+            is_valid = pqc.dilithium_sign_verify(bytes.fromhex(enc_content), sender_dili_pk, signature)
             if not is_valid:
                 raise HTTPException(
                     status_code=400,
