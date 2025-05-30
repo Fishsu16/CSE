@@ -1,6 +1,5 @@
-#from pqclean.kem import kyber512
-#from pqclean.sign import dilithium2
-from pqclean import bindings
+from dilithium_py.ml_dsa import ML_DSA_44 as dilithium
+from kyber_py.ml_kem import ML_KEM_512 as kyber
 from Crypto.Cipher import ChaCha20_Poly1305
 from Crypto.Random import get_random_bytes
 import base64
@@ -25,9 +24,10 @@ dilithium = bindings.Signature('Dilithium2')
 #####################################################################################
 #              Key Exchange with Kyber & Encrypt with ChaCha20                      #
 #####################################################################################
+# 封裝
 def kyber_keygen():
-    public_key, secret_key = kyber512.keypair()
-    return public_key, secret_key
+    kyber_pk, kyber_sk = kyber.keygen()
+    return kyber_pk.hex(), kyber_sk.hex()
 
 async def get_kyber_keys(username: str, db: AsyncSession):
     result = await db.execute(select(User).where(User.username == username))
@@ -41,33 +41,24 @@ async def get_kyber_keys(username: str, db: AsyncSession):
 
 # 🔒 用 Kyber 加密資料（封裝 symmetric key，並用 AES-GCM 加密資料）
 def kyber_kem(public_key: bytes):
-    encapsulated_key, shared_secret = kyber.enc(public_key)
+    shared_secret, encapsulated_key = kyber.encaps(public_key)
+    print(type(shared_secret), type(encapsulated_key))
     return {
-        "encapsulated_key": base64.b64encode(encapsulated_key).decode(),
-        "shared_secret": base64.b64encode(shared_secret).decode()
+        "encapsulated_key": encapsulated_key.hex(), #base64.b64encode(encapsulated_key).decode("utf-8"),
+        "shared_secret": shared_secret.hex() #base64.b64encode(shared_secret).decode("utf-8")
     }
 
 # 解封裝
 def kyber_decapsulate(encapsulated_key: bytes, secret_key: bytes):
-    shared_secret = kyber.dec(base64.b64decode(encapsulated_key), secret_key)
-    return base64.b64encode(shared_secret).decode()
-
-async def get_kyber_keys(username: str, db: AsyncSession):
-    result = await db.execute(select(User).where(User.username == username))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=400, detail="Username not found")
-    kyber_pk = user.kyber_pk
-    kyber_sk = user.kyber_sk
-
-    return kyber_pk, kyber_sk
+    shared_secret = kyber.decaps(secret_key, encapsulated_key)
+    return shared_secret
 
 async def encrypt_files_with_ChaCha20_Poly1305(files: List[UploadFile], ChaCha20_Poly_key: bytes):
     encrypted_files = []
     for file in files:
         content = await file.read()
         nonce = os.urandom(12)
-        cipher = ChaCha20_Poly1305.new(key=chacha_key, nonce=nonce)
+        cipher = ChaCha20_Poly1305.new(key=ChaCha20_Poly_key, nonce=nonce)
         ciphertext, tag = cipher.encrypt_and_digest(data)
         encrypted_data = nonce + ciphertext + tag
 
@@ -83,8 +74,8 @@ async def encrypt_files_with_ChaCha20_Poly1305(files: List[UploadFile], ChaCha20
 #                            Signature with Dilithium                               #
 #####################################################################################
 def dilithium_keygen():
-    public_key, secret_key = dilithium.keypair()
-    return public_key, secret_key
+    public_key, secret_key = dilithium.keygen()
+    return public_key.hex(), secret_key.hex()
 
 async def get_dilithium_keys(username: str, db: AsyncSession):
     result = await db.execute(select(User).where(User.username == username))
@@ -106,7 +97,8 @@ def dilithium_sign_encrypted_files(
         encrypted_data = file["content"]
         filename = file["filename"]
 
-        signature = dilithium.sign(encrypted_data, user_sk)
+        signature = dilithium.sign(user_sk, encrypted_data)
+        print(type(signature))
         #print("Signature:", signature.hex())
 
         # 儲存 filename 與對應簽章 (base64 編碼可讀性更好)
@@ -118,3 +110,7 @@ def dilithium_sign_encrypted_files(
         )
 
     return signatures
+
+def dilithium_sign_verify(msg: bytes, user_pk: bytes, sign: bytes):
+    is_valid = dilithium.verify(user_pk, msg, sign)
+    return is_valid
