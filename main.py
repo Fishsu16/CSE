@@ -420,30 +420,32 @@ async def pqc_encrypt_files(
     with zipfile.ZipFile(outer_zip_buffer, "w", zipfile.ZIP_DEFLATED) as outer_zip:
         for recipient in all_recipients:
             recipient_pk, _ = await pqc.get_kyber_keys(username=recipient, db=db)
-            # 2.1 生成 AES_KEY 並加密 AES_KEY
-            kem_results = pqc.kyber_kem(recipient_pk)
-            ChaCha_key: bytes = kem_results["shared_secret"]
-            enc_ChaCha_key = kem_results["encapsulated_key"]
-            # 2.2 加密檔案
-            encrypted_files: List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
-                files, ChaCha_key
-            )
-            # 2.3 產生加密檔案簽章
-            #recipient_dili_pk, _ = await pqc.get_dilithium_keys(username=username, db=db)
-            signatures: List[dict] = pqc.dilithium_sign_encrypted_files(
-                user_sk=dili_sk, encrypted_files=encrypted_files
-            )
-            # 2.4 產生憑證
+            sub_zip_buffer = BytesIO()
+            with zipfile.ZipFile(sub_zip_buffer, "w", zipfile.ZIP_DEFLATED) as sub_zip:
+                # 2.1 生成 AES_KEY 並加密 AES_KEY
+                kem_results = pqc.kyber_kem(recipient_pk)
+                ChaCha_key: bytes = kem_results["shared_secret"]
+                enc_ChaCha_key = kem_results["encapsulated_key"]
+                # 2.2 加密檔案
+                encrypted_files: List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
+                    files, ChaCha_key
+                )
+                # 2.3 產生加密檔案簽章
+                #recipient_dili_pk, _ = await pqc.get_dilithium_keys(username=username, db=db)
+                signatures: List[dict] = pqc.dilithium_sign_encrypted_files(
+                    user_sk=dili_sk, encrypted_files=encrypted_files
+                )
+                # 2.4 產生憑證
 
-            # 2.5 建立該recipient的子 ZIP
-            for file in encrypted_files:
-                sub_zip.writestr(file["filename"], file["content"])
-            sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
-            sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
-            #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+                # 2.5 建立該recipient的子 ZIP
+                for file in encrypted_files:
+                    sub_zip.writestr(file["filename"], file["content"])
+                sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
+                sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
+                #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
 
-        sub_zip_buffer.seek(0)
-        outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
+            sub_zip_buffer.seek(0)
+            outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
 
             ## 建立該 recipient 的子 ZIP
             #sub_zip_buffer = BytesIO()
@@ -571,19 +573,14 @@ async def pqc_decrypt_files(
         ChaCha_key_enc = zip_file.read(ChaCha_key_name)
 
         try:
-            ChaCha_key = private_key.decrypt(
-                ChaCha_key_enc,
-                padding.OAEP(
-                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                    algorithm=hashes.SHA256(),
-                    label=None,
-                ),
-            )
+            ChaCha_key = pqc.kyber_decapsulate(bytes.fromhex(ChaCha_key_enc), kyber_sk)
         except Exception as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
+                detail=f"無法解密 ChaCha 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
             )
+
+        # 3.3
 
         # YU modified
         ## 檢驗憑證與抽取sender public key
@@ -619,29 +616,29 @@ async def pqc_decrypt_files(
         #    raise HTTPException(status_code=400, detail=f"Load verify.key failed: {e}")
 
         # 找出 aes_key 檔
-        aes_key_name = f"{username}.key.enc"
-        if aes_key_name not in namelist:
-            raise HTTPException(
-                status_code=400, detail=f"{username}.key.enc 加密過屬於您的解密鑰遺失"
-            )
-
-        aes_key_enc = zip_file.read(aes_key_name)
-
-        # 解密 AES key
-        try:
-            AES_key = private_key.decrypt(
-                aes_key_enc,
-                padding.OAEP(
-                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                    algorithm=hashes.SHA256(),
-                    label=None,
-                ),
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
-            )
+        #aes_key_name = f"{username}.key.enc"
+        #if aes_key_name not in namelist:
+        #    raise HTTPException(
+        #        status_code=400, detail=f"{username}.key.enc 加密過屬於您的解密鑰遺失"
+        #    )
+#
+        #aes_key_enc = zip_file.read(aes_key_name)
+#
+        ## 解密 AES key
+        #try:
+        #    AES_key = private_key.decrypt(
+        #        aes_key_enc,
+        #        padding.OAEP(
+        #            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        #            algorithm=hashes.SHA256(),
+        #            label=None,
+        #        ),
+        #    )
+        #except Exception as e:
+        #    raise HTTPException(
+        #        status_code=400,
+        #        detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
+        #    )
 
         # 讀簽章 JSON
         if "signatures.json" not in namelist:
