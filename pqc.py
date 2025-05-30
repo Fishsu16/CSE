@@ -71,7 +71,7 @@ async def encrypt_files_with_ChaCha20_Poly1305(files: List[UploadFile], ChaCha20
         content = await file.read()
         nonce = os.urandom(12)
         cipher = ChaCha20_Poly1305.new(key=ChaCha20_Poly_key, nonce=nonce)
-        ciphertext, tag = cipher.encrypt_and_digest(data)
+        ciphertext, tag = cipher.encrypt_and_digest(content)
         encrypted_data = nonce + ciphertext + tag
 
         # 加密檔案命名：原檔名 + .enc
