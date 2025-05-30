@@ -13,6 +13,7 @@ from sqlalchemy import Tuple, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
 from models import Base, engine
 from auth import router as auth_router
@@ -471,73 +472,6 @@ async def pqc_encrypt_files(
 
 
 
-    
-    #try:
-    #    cert = certificate.gencsr(user_sk)
-    #except Exception as e:
-    #    import traceback
-    #    print("[/api/encrypt] Encryption failed:", e)
-    #    traceback.print_exc()
-    #    raise HTTPException(status_code=500, detail=str(e))
-    
-    # 1. 產生 AES 金鑰
-    #kyber_pk, kyber_sk = await AES_RSA.get_user_keys(username=username, db=db)
-    #AES_key: bytes = pqc.kyber_kem()
-    #AES_key: bytes = kms.generate_AES_key()
-
-    # 2. 加密檔案
-    #encrypted_files: List[dict] = await AES_RSA.encrypt_files_with_AES(
-    #    files=files, AES_key=AES_key
-    #)
-    # dict 結構: {"filename": "file.txt", "content": b"...encrypted..."}
-
-    # YU modified
-    # 3. 取得簽名用的金鑰與產生cert
-    #user_pk, user_sk = await AES_RSA.get_user_keys(username=username, db=db)
-    #signatures: List[dict] = AES_RSA.sign_encrypted_files(
-    #    user_sk=user_sk, encrypted_files=encrypted_files
-    #)
-    #try:
-    #    cert = certificate.gencsr(user_sk)
-    #except Exception as e:
-    #    import traceback
-    #    print("[/api/encrypt] Encryption failed:", e)
-    #    traceback.print_exc()
-    #    raise HTTPException(status_code=500, detail=str(e))
-
-
-    # dict 結構: {"filename": ..., "signature": ...}
-
-    # 4. 為每位共享者建立一份獨立的 ZIP 包（含專屬的 AES key 加密）
-    #outer_zip_buffer = BytesIO()
-    #with zipfile.ZipFile(outer_zip_buffer, "w", zipfile.ZIP_DEFLATED) as outer_zip:
-    #    for recipient in all_recipients:
-    #        recipient_pk, _ = await AES_RSA.get_user_keys(username=recipient, db=db)
-    #        enc_AES_key = AES_RSA.encrypt_AES_key(AES_key, recipient_pk)
-#
-    #        # 建立該 recipient 的子 ZIP
-    #        sub_zip_buffer = BytesIO()
-    #        with zipfile.ZipFile(sub_zip_buffer, "w", zipfile.ZIP_DEFLATED) as sub_zip:
-    #            for file in encrypted_files:
-    #                sub_zip.writestr(file["filename"], file["content"])
-#
-    #            sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
-    #            sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
-    #            # YU modified
-    #            #sub_zip.writestr("verify.key", user_pk_pem)
-    #            sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
-#
-    #        sub_zip_buffer.seek(0)
-    #        outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
-#
-    #outer_zip_buffer.seek(0)
-    #return StreamingResponse(
-    #    outer_zip_buffer,
-    #    media_type="application/x-zip-compressed",
-    #    headers={"Content-Disposition": f"attachment; filename=encrypted_packages.zip"},
-    #)
-
-
 @app.post("/api/pqc_decrypt")
 async def pqc_decrypt_files(
     username: str = Form(...),
@@ -580,7 +514,46 @@ async def pqc_decrypt_files(
                 detail=f"無法解密 ChaCha 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
             )
 
-        # 3.3
+        # 3.3 解密與檢查簽章
+        if "signatures.json" not in namelist:
+            raise HTTPException(status_code=400, detail="簽名 signatures.json 遺失")
+
+        signatures_json = zip_file.read("signatures.json")
+        signatures = json.loads(signatures_json)
+
+        # 依序驗簽並解密各個加密檔案
+        for file_info in signatures:
+            enc_filename = file_info["filename"]
+            signature_b64 = file_info["signature"]
+
+            if enc_filename not in namelist:
+                raise HTTPException(
+                    status_code=400, detail=f"加密檔 {enc_filename} 遺失"
+                )
+
+            enc_content = zip_file.read(enc_filename)
+            signature = base64.b64decode(signature_b64)
+
+            # 驗簽
+            is_valid = pqc.dilithium_sign_verify(msg, sender_kyber_pk, signature)
+            if (!is_valid):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Signature verification失敗， {enc_filename} 可能遭到竄改",
+                )
+
+            # ChaCha 解密 (nonce 為前 12 bytes)
+            nonce = enc_content[:12]
+            ciphertext = enc_content[12:]
+            ChaCha = ChaCha20Poly1305(ChaCha_key)
+            plaintext = ChaCha.decrypt(nonce, ciphertext, associated_data=None)
+
+            # 移除 .enc 副檔名回復原始檔名
+            orig_filename = (
+                enc_filename[:-4] if enc_filename.endswith(".enc") else enc_filename
+            )
+
+            decrypted_files.append({"filename": orig_filename, "content": plaintext})
 
         # YU modified
         ## 檢驗憑證與抽取sender public key
@@ -641,54 +614,54 @@ async def pqc_decrypt_files(
         #    )
 
         # 讀簽章 JSON
-        if "signatures.json" not in namelist:
-            raise HTTPException(status_code=400, detail="簽名 signatures.json 遺失")
-
-        signatures_json = zip_file.read("signatures.json")
-        signatures = json.loads(signatures_json)
-
-        # 依序驗簽並解密各個加密檔案
-        for file_info in signatures:
-            enc_filename = file_info["filename"]
-            signature_b64 = file_info["signature"]
-
-            if enc_filename not in namelist:
-                raise HTTPException(
-                    status_code=400, detail=f"加密檔 {enc_filename} 遺失"
-                )
-
-            enc_content = zip_file.read(enc_filename)
-            signature = base64.b64decode(signature_b64)
-
-            # 驗簽
-            try:
-                public_key.verify(
-                    signature,
-                    enc_content,
-                    padding.PSS(
-                        mgf=padding.MGF1(hashes.SHA256()),
-                        salt_length=padding.PSS.MAX_LENGTH,
-                    ),
-                    hashes.SHA256(),
-                )
-            except Exception:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Signature verification失敗， {enc_filename} 可能遭到竄改",
-                )
-
-            # AES-GCM 解密 (nonce 為前 12 bytes)
-            nonce = enc_content[:12]
-            ciphertext = enc_content[12:]
-            aesgcm = AESGCM(AES_key)
-            plaintext = aesgcm.decrypt(nonce, ciphertext, associated_data=None)
-
-            # 移除 .enc 副檔名回復原始檔名
-            orig_filename = (
-                enc_filename[:-4] if enc_filename.endswith(".enc") else enc_filename
-            )
-
-            decrypted_files.append({"filename": orig_filename, "content": plaintext})
+        #if "signatures.json" not in namelist:
+        #    raise HTTPException(status_code=400, detail="簽名 signatures.json 遺失")
+#
+        #signatures_json = zip_file.read("signatures.json")
+        #signatures = json.loads(signatures_json)
+#
+        ## 依序驗簽並解密各個加密檔案
+        #for file_info in signatures:
+        #    enc_filename = file_info["filename"]
+        #    signature_b64 = file_info["signature"]
+#
+        #    if enc_filename not in namelist:
+        #        raise HTTPException(
+        #            status_code=400, detail=f"加密檔 {enc_filename} 遺失"
+        #        )
+#
+        #    enc_content = zip_file.read(enc_filename)
+        #    signature = base64.b64decode(signature_b64)
+#
+        #    # 驗簽
+        #    try:
+        #        public_key.verify(
+        #            signature,
+        #            enc_content,
+        #            padding.PSS(
+        #                mgf=padding.MGF1(hashes.SHA256()),
+        #                salt_length=padding.PSS.MAX_LENGTH,
+        #            ),
+        #            hashes.SHA256(),
+        #        )
+        #    except Exception:
+        #        raise HTTPException(
+        #            status_code=400,
+        #            detail=f"Signature verification失敗， {enc_filename} 可能遭到竄改",
+        #        )
+#
+        #    # AES-GCM 解密 (nonce 為前 12 bytes)
+        #    nonce = enc_content[:12]
+        #    ciphertext = enc_content[12:]
+        #    aesgcm = AESGCM(AES_key)
+        #    plaintext = aesgcm.decrypt(nonce, ciphertext, associated_data=None)
+#
+        #    # 移除 .enc 副檔名回復原始檔名
+        #    orig_filename = (
+        #        enc_filename[:-4] if enc_filename.endswith(".enc") else enc_filename
+        #    )
+#
+        #    decrypted_files.append({"filename": orig_filename, "content": plaintext})
 
     # 回傳一個 zip 包含所有解密檔案
     output_zip_buffer = BytesIO()

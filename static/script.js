@@ -199,7 +199,8 @@ decryptButton.addEventListener("click", () => {
     const formData = new FormData();
     formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
     formData.append("username", currentUser);
-    fetch(`${backendUrl}/api/decrypt`, {
+    //fetch(`${backendUrl}/api/decrypt`, {
+    fetch(`${backendUrl}/api/pqc_decrypt`, {
       method: "POST",
       body: formData,
     })

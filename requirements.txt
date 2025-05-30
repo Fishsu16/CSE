@@ -15,3 +15,4 @@ requests
 dilithium-py
 kyber-py
 pycryptodome
+hashlib

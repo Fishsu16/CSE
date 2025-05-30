@@ -21,6 +21,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import datetime
 import os
+import hashlib
 
 from io import BytesIO
 import json
@@ -109,9 +110,12 @@ def dilithium_sign_encrypted_files(
         encrypted_data = file["content"]
         filename = file["filename"]
 
-        signature = dilithium.sign(user_sk, encrypted_data)
-        #print(type(signature))
-        #print("Signature:", signature.hex())
+        # 使用 SHAKE256 對加密資料進行雜湊，輸出 64 bytes
+        hasher = hashlib.shake_256()
+        hasher.update(encrypted_data)
+        hashed_data = hasher.digest(64)
+
+        signature = dilithium.sign(user_sk, hashed_data)
 
         # 儲存 filename 與對應簽章 (base64 編碼可讀性更好)
         signatures.append(
@@ -124,5 +128,10 @@ def dilithium_sign_encrypted_files(
     return signatures
 
 def dilithium_sign_verify(msg: bytes, user_pk: bytes, sign: bytes):
-    is_valid = dilithium.verify(user_pk, msg, sign)
+    
+    hasher = hashlib.shake_256()
+    hasher.update(msg)
+    hashed_data = hasher.digest(64)
+
+    is_valid = dilithium.verify(user_pk, hashed_data, sign)
     return is_valid
