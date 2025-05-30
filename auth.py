@@ -53,8 +53,8 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     user_pk, user_sk = kms.create_user_keys(tag=f"user-key-{username}")
     # YU modified
     #kyber_pk, kyber_sk = pqc.keygen()
-    kyber_pk, kyber_sk = "", ""
-    dilithium_pk, dilithium_sk = "", ""
+    #kyber_pk, kyber_sk = "", ""
+    #dilithium_pk, dilithium_sk = "", ""
     new_user = User(
         username=username,
         email=email,
@@ -62,10 +62,10 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
         otp_secret=otp_secret,
         user_sk=user_sk,
         user_pk=user_pk,
-        kyber_pk=kyber_pk,
-        kyber_sk=kyber_sk,
-        dilithium_pk=dilithium_pk,
-        dilithium_sk=dilithium_sk,
+        #kyber_pk=kyber_pk,
+        #kyber_sk=kyber_sk,
+        #dilithium_pk=dilithium_pk,
+        #dilithium_sk=dilithium_sk,
     )
     db.add(new_user)
     await db.commit()

@@ -23,10 +23,10 @@ class User(Base):
     otp_secret = Column(String(32), nullable=False)
     user_sk = Column(String, nullable=True)
     user_pk = Column(String, nullable=True)
-    kyber_sk = Column(String, nullable=True)
-    kyber_pk = Column(String, nullable=True)
-    dilithium_sk = Column(String, nullable=True)
-    dilithium_pk = Column(String, nullable=True)
+    #kyber_sk = Column(String, nullable=True)
+    #kyber_pk = Column(String, nullable=True)
+    #dilithium_sk = Column(String, nullable=True)
+    #dilithium_pk = Column(String, nullable=True)
 
 
 async def get_db():
