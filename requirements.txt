@@ -12,4 +12,5 @@ jinja2
 pydantic[email]
 qrcode[pil]
 requests
-git+https://github.com/sebastian-philipp/py-pqclean.git
+dilithium-py
+kyber-py

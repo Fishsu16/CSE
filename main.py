@@ -397,3 +397,77 @@ async def decrypt_files(
         media_type="application/x-zip-compressed",
         headers={"Content-Disposition": f"attachment; filename=decrypted_files.zip"},
     )
+
+@app.post("/api/pqc_encrypt")
+async def encrypt_files(
+    username: str = Form(...),
+    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
+    files: List[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
+
+    recipient_list = json.loads(recipients)
+    all_recipients = [username] + recipient_list  # 包含自己
+
+    # 1. 產生 AES 金鑰
+    AES_key: bytes = kms.generate_AES_key()
+
+    # 2. 加密檔案
+    encrypted_files: List[dict] = await AES_RSA.encrypt_files_with_AES(
+        files=files, AES_key=AES_key
+    )
+    # dict 結構: {"filename": "file.txt", "content": b"...encrypted..."}
+
+    # YU modified
+    # 3. 取得簽名用的金鑰與產生cert
+    user_pk, user_sk = await AES_RSA.get_user_keys(username=username, db=db)
+    signatures: List[dict] = AES_RSA.sign_encrypted_files(
+        user_sk=user_sk, encrypted_files=encrypted_files
+    )
+    #user_pk_pem = serialization.load_der_public_key(
+    #    user_pk, backend=default_backend()
+    #).public_bytes(
+    #    encoding=serialization.Encoding.PEM,
+    #    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    #)
+    try:
+        cert = certificate.gencsr(user_sk)
+    except Exception as e:
+        import traceback
+        print("[/api/encrypt] Encryption failed:", e)
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+    # dict 結構: {"filename": ..., "signature": ...}
+
+    # 4. 為每位共享者建立一份獨立的 ZIP 包（含專屬的 AES key 加密）
+    outer_zip_buffer = BytesIO()
+    with zipfile.ZipFile(outer_zip_buffer, "w", zipfile.ZIP_DEFLATED) as outer_zip:
+        for recipient in all_recipients:
+            recipient_pk, _ = await AES_RSA.get_user_keys(username=recipient, db=db)
+            enc_AES_key = AES_RSA.encrypt_AES_key(AES_key, recipient_pk)
+
+            # 建立該 recipient 的子 ZIP
+            sub_zip_buffer = BytesIO()
+            with zipfile.ZipFile(sub_zip_buffer, "w", zipfile.ZIP_DEFLATED) as sub_zip:
+                for file in encrypted_files:
+                    sub_zip.writestr(file["filename"], file["content"])
+
+                sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
+                sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
+                # YU modified
+                #sub_zip.writestr("verify.key", user_pk_pem)
+                sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+
+            sub_zip_buffer.seek(0)
+            outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
+
+    outer_zip_buffer.seek(0)
+    return StreamingResponse(
+        outer_zip_buffer,
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename=encrypted_packages.zip"},
+    )
