@@ -542,7 +542,7 @@ async def pqc_decrypt_files(
             signature = base64.b64decode(signature_b64)
 
             # 驗簽
-            is_valid = pqc.dilithium_sign_verify(bytes.fromhex(enc_content), sender_dili_pk, signature)
+            is_valid = pqc.dilithium_sign_verify(bytes.fromhex(enc_content.decode("utf-8")), sender_dili_pk, signature)
             if not is_valid:
                 raise HTTPException(
                     status_code=400,
