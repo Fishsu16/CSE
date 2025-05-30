@@ -498,7 +498,7 @@ async def pqc_decrypt_files(
         namelist = zip_file.namelist()
 
         # 3.1 檢驗憑證與抽取sender public key
-        if "verfy.key" not in namelist:
+        if "verify.key" not in namelist:
             raise HTTPException(
                 status_code=400, detail=f"verify.key 解密shared_key的密鑰遺失"
             )
