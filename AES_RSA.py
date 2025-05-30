@@ -18,7 +18,7 @@ from cryptography.hazmat.backends import default_backend
 #from auth import router as auth_router
 
 #import kms
-#from models import User, get_db
+from models import User, get_db
 #import certificat
 
 #################################################
