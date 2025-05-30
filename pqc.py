@@ -98,7 +98,7 @@ def dilithium_sign_encrypted_files(
         filename = file["filename"]
 
         signature = dilithium.sign(user_sk, encrypted_data)
-        print(type(signature))
+        #print(type(signature))
         #print("Signature:", signature.hex())
 
         # 儲存 filename 與對應簽章 (base64 編碼可讀性更好)

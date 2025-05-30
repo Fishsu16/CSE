@@ -427,6 +427,22 @@ async def pqc_encrypt_files(
             encrypted_files = List[dict] = await pqc.encrypt_files_with_ChaCha20_Poly1305(
                 files=files, AES_key=AES_key
             )
+            # 2.3 產生加密檔案簽章
+            #recipient_dili_pk, _ = await pqc.get_dilithium_keys(username=username, db=db)
+            signatures: List[dict] = pqc.sdilithium_sign_encrypted_files(
+                user_sk=dili_sk, encrypted_files=encrypted_files
+            )
+            # 2.4 產生憑證
+
+            # 2.5 建立該recipient的子 ZIP
+            for file in encrypted_files:
+                sub_zip.writestr(file["filename"], file["content"])
+            sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
+            sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
+            #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+
+        sub_zip_buffer.seek(0)
+        outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
 
             ## 建立該 recipient 的子 ZIP
             #sub_zip_buffer = BytesIO()
@@ -444,6 +460,14 @@ async def pqc_encrypt_files(
             #outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
 
     outer_zip_buffer.seek(0)
+    return StreamingResponse(
+        outer_zip_buffer,
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename=encrypted_packages.zip"},
+    )
+
+
+
     
     #try:
     #    cert = certificate.gencsr(user_sk)
