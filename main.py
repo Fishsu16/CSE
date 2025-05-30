@@ -502,7 +502,7 @@ async def pqc_decrypt_files(
             raise HTTPException(
                 status_code=400, detail=f"verify.key 解密shared_key的密鑰遺失"
             )
-        sender_dili_key = zip_file.read("verify.key")
+        sender_dili_pk = zip_file.read("verify.key")
         #sender_dili_key = bytes.fromhex(sender_dili_key_hex)
 
         # 3.2 ChaCha20 encrypt key
