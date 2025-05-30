@@ -329,7 +329,7 @@ registerForm.addEventListener("submit", async function (event) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Registration failed");
+      throw new Error(data.detail || data.message || "Registration failed");
     }
 
     qrCodeImg.src = data.qrCodeUrl;
