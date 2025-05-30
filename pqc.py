@@ -17,10 +17,6 @@ from pydantic import BaseModel
 import datetime
 import os
 
-# 初始化 Kyber 與 Dilithium（你也可以改用 Kyber768 / Dilithium3 等）
-kyber = bindings.KEM('Kyber512')
-dilithium = bindings.Signature('Dilithium2')
-
 #####################################################################################
 #              Key Exchange with Kyber & Encrypt with ChaCha20                      #
 #####################################################################################
