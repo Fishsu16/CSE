@@ -5,6 +5,7 @@ from Crypto.Random import get_random_bytes
 import base64
 from typing import List, Dict, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import Tuple, select
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
