@@ -250,7 +250,7 @@ document
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Login failed 253");
+        throw new Error(data.detail || data.message || "Login failed 253");
       }
 
       // 登入成功，儲存狀態
