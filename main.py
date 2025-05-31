@@ -179,11 +179,17 @@ async def read_root(request: Request):
 
 # YU modified
 #@app.post("/api/encrypt")
+#async def aes_encrypt_files(
+#    username: str = Form(...),
+#    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
+#    files: List[UploadFile] = File(...),
+#    db: AsyncSession = Depends(get_db),
+#):
 async def aes_encrypt_files(
-    username: str = Form(...),
-    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
-    files: List[UploadFile] = File(...),
-    db: AsyncSession = Depends(get_db),
+    username: str,
+    recipients: str,  # JSON 字串形式的使用者名稱清單
+    files: List[UploadFile],
+    db: AsyncSession,
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded")
@@ -255,10 +261,16 @@ async def aes_encrypt_files(
 
 
 #@app.post("/api/decrypt")
+#async def aes_decrypt_files(
+#    username: str = Form(...),
+#    file: UploadFile = File(...),
+#    db: AsyncSession = Depends(get_db),
+#    public_key,
+#):
 async def aes_decrypt_files(
-    username: str = Form(...),
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
+    username: str,
+    file: UploadFile,
+    db: AsyncSession,
     public_key,
 ):
     if not file:
@@ -406,11 +418,17 @@ async def aes_decrypt_files(
 
 
 #@app.post("/api/pqc_encrypt")
+#async def pqc_encrypt_files(
+#    username: str = Form(...),
+#    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
+#    files: List[UploadFile] = File(...),
+#    db: AsyncSession = Depends(get_db),
+#):
 async def pqc_encrypt_files(
-    username: str = Form(...),
-    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
-    files: List[UploadFile] = File(...),
-    db: AsyncSession = Depends(get_db),
+    username: str,
+    recipients: str,  # JSON 字串形式的使用者名稱清單
+    files: List[UploadFile],
+    db: AsyncSession,
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded")
@@ -479,11 +497,17 @@ async def pqc_encrypt_files(
 
 
 #@app.post("/api/pqc_decrypt")
+#async def pqc_decrypt_files(
+#    username: str = Form(...),
+#    file: UploadFile = File(...),
+#    db: AsyncSession = Depends(get_db),
+#    sender_dili_pk,
+#):
 async def pqc_decrypt_files(
-    username: str = Form(...),
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-    sender_dili_pk,
+    username: str,
+    file: UploadFile,
+    db: AsyncSession,
+    public_key,
 ):
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
