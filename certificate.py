@@ -36,7 +36,6 @@ def gencsr(user_sk, user_pk, tag) -> List[Dict[str, bytes]]:
     encoded_pk = base64.b64encode(user_pk)
     builder = builder.add_extension(x509.UnrecognizedExtension(OID_KEY_TAG, encoded_pk), critical=False)
     builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, tag), critical=False)
-    #builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, tag), critical=False)
 
     csr = builder.sign(private_key, hashes.SHA256(), backend=default_backend())
     csr_pem = csr.public_bytes(serialization.Encoding.PEM)
@@ -100,17 +99,9 @@ def verify_cert(client_cert):
         if not (client_cert.not_valid_before <= now <= client_cert.not_valid_after):
             raise HTTPException(status_code=400, detail="Client certificate is not valid at this time")
 
-        # 取得 public key 並轉為 PEM 格式字串
-        #public_key = client_cert.public_key()
-        #public_key_pem = public_key.public_bytes(
-        #    encoding=serialization.Encoding.PEM,
-        #    format=serialization.PublicFormat.SubjectPublicKeyInfo
-        #)
         try:
             ext = client_cert.extensions.get_extension_for_oid(OID_SIGN_TAG)
-            sign_tag = ext.value.value.decode("utf-8", errors="ignore")#value = ext.value.value  # bytes
-            #print("🔖 Extended Info (raw bytes):", value)
-            #print("📝 Extended Info (decoded):", value.decode("utf-8", errors="ignore"))
+            sign_tag = ext.value.value.decode("utf-8", errors="ignore")
             ext = client_cert.extensions.get_extension_for_oid(OID_KEY_TAG)
             public_key_encoded = ext.value.value
             public_key_der = base64.b64decode(public_key_encoded)
@@ -118,11 +109,8 @@ def verify_cert(client_cert):
                 public_key = load_der_public_key(public_key_der)
             else:
                 public_key = public_key_der
-            #print("🔖 Extended Info (raw bytes):", value)
-            #print("📝 Extended Info (decoded):", value.decode("utf-8", errors="ignore"))
         except x509.ExtensionNotFound:
             raise HTTPException(status_code=400, detail=f"certificate decode public key error: {e}")
-            #print("❌ 找不到自訂 Extended Info")
 
     except requests.HTTPError:
         raise HTTPException(status_code=502, detail="Failed to download intermediate certificate from CA server")

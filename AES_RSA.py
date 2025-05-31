@@ -14,12 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-#from models import Base, engine
-#from auth import router as auth_router
-
-#import kms
 from models import User, get_db
-#import certificat
 
 #################################################
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
