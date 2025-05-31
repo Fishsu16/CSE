@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+#from cryptography.hazmat.primitives.serialization import load_der_private_key
 
 from models import Base, engine
 from auth import router as auth_router
@@ -212,8 +213,8 @@ async def encrypt_files(
     #    format=serialization.PublicFormat.SubjectPublicKeyInfo,
     #)
     try:
-        user_pk_der = load_der_public_key(user_pk)
-        cert = certificate.gencsr(user_sk, user_pk_der, b"RSA")
+        #user_pk_der = load_der_public_key(user_pk)
+        cert = certificate.gencsr(user_sk, user_pk, b"RSA")
     except Exception as e:
         import traceback
         print("[/api/encrypt] Encryption failed:", e)
