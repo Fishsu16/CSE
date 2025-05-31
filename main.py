@@ -516,15 +516,15 @@ async def pqc_decrypt_files(
             if verify_status["status"] != "success":
                 raise HTTPException(status_code=400, detail="Certificate驗證失敗")
             else:
-                public_key_pem = verify_status["public_key"]
+                public_key = verify_status["public_key"]
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
-        try:
-            public_key = serialization.load_pem_public_key(
-                public_key_pem, backend=default_backend()
-            )
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
+        #try:
+        #    public_key = serialization.load_pem_public_key(
+        #        public_key_pem, backend=default_backend()
+        #    )
+        #except Exception as e:
+        #    raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
 
         # 3.2 ChaCha20 encrypt key
         ChaCha_key_name = f"{username}.key.enc"
@@ -708,7 +708,7 @@ async def pqc_decrypt_files(
 async def pqc_encrypt_files(
     username: str = Form(...),
     recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
-    
+
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
 ):
