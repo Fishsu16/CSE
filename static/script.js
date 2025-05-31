@@ -127,8 +127,6 @@ uploadButton.addEventListener("click", () => {
 
   if (confirm("Are you sure you want to encrypt these files?")) {
     const formData = new FormData();
-    const formData2 = new FormData();
-    formData2.append('algorithm', "ChaCha20")
     formData.append('algorithm', "AES");
     filesToUpload.forEach((file) => {
       formData.append("files", file);
@@ -140,34 +138,6 @@ uploadButton.addEventListener("click", () => {
     //fetch(`${backendUrl}/api/pqc_encrypt`, {
       method: "POST",
       body: formData,
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Encryption failed");
-        return response.blob(); // ZIP file
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "encrypted_package.zip";
-        link.click();
-        URL.revokeObjectURL(url);
-        alert("Files encrypted and downloaded successfully!");
-        fileList.innerHTML = "";
-        uploadButton.style.display = "none";
-        filesToUpload = [];
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("Encryption failed. Please try again.");
-      });
-
-    formData2.append("username", currentUser);
-    formData2.append("recipients", JSON.stringify(addedUsers));
-    fetch(`${backendUrl}/api/encrypt`, {
-    //fetch(`${backendUrl}/api/pqc_encrypt`, {
-      method: "POST",
-      body: formData2,
     })
       .then((response) => {
         if (!response.ok) throw new Error("Encryption failed");
