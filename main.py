@@ -648,7 +648,7 @@ async def decrypt_files(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    if not files:
+    if not file:
         raise HTTPException(status_code=400, detail="No files uploaded")
     
     # 1. 從 DB 取該使用者的私鑰（用來解密 AES key）
