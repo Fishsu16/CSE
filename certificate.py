@@ -119,7 +119,7 @@ def verify_cert(client_cert):
             ext = client_cert.extensions.get_extension_for_oid(OID_KEY_TAG)
             public_key_encoded = ext.value.value
             public_key_der = base64.b64decode(public_key_encoded)
-            if sign_tag == b"RSA":
+            if sign_tag == "RSA":
                 public_key = load_der_public_key(public_key_der)
             else:
                 public_key = public_key_der

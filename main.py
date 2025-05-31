@@ -417,8 +417,10 @@ async def pqc_encrypt_files(
     recipient_list = json.loads(recipients)
     all_recipients = [username] + recipient_list  # 包含自己
 
-    # 1. 取得簽名用的金鑰與產生cert
+    # 1. 取得簽名用的金鑰、產生cert的金鑰與產生cert
     dili_pk, dili_sk = await pqc.get_dilithium_keys(username=username, db=db)
+    _, rsa_sk = await AES_RSA.get_user_keys(username=username, db=db)
+    cert = certificate.gencsr(rsa_sk, dili_pk, b"Dilithium")
 
     # 2. 為每位共享者建立一份獨立的 ZIP 包並加密（含專屬的 AES key 加密）
     outer_zip_buffer = BytesIO()
@@ -440,14 +442,13 @@ async def pqc_encrypt_files(
                 signatures: List[dict] = pqc.dilithium_sign_encrypted_files(
                     user_sk=dili_sk, encrypted_files=encrypted_files
                 )
-                # 2.4 產生憑證
 
-                # 2.5 建立該recipient的子 ZIP
+                # 2.4 建立該recipient的子 ZIP
                 for file in encrypted_files:
                     sub_zip.writestr(file["filename"], file["content"])
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
-                #sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+                sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
                 sub_zip.writestr("verify.key", dili_pk)
 
             sub_zip_buffer.seek(0)

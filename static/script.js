@@ -133,8 +133,8 @@ uploadButton.addEventListener("click", () => {
 
     formData.append("username", currentUser);
     formData.append("recipients", JSON.stringify(addedUsers));
-    fetch(`${backendUrl}/api/encrypt`, {
-    //fetch(`${backendUrl}/api/pqc_encrypt`, {
+    //fetch(`${backendUrl}/api/encrypt`, {
+    fetch(`${backendUrl}/api/pqc_encrypt`, {
       method: "POST",
       body: formData,
     })
