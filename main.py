@@ -703,3 +703,14 @@ async def pqc_decrypt_files(
         media_type="application/x-zip-compressed",
         headers={"Content-Disposition": f"attachment; filename=decrypted_files.zip"},
     )
+
+@app.post("/api/origin_encrypt")
+async def pqc_encrypt_files(
+    username: str = Form(...),
+    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
+    
+    files: List[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")

@@ -40,7 +40,7 @@ def gencsr(user_sk, user_pk, tag) -> List[Dict[str, bytes]]:
     # 加入自訂 Extended Info
     encoded_pk = base64.b64encode(user_pk)
     builder = builder.add_extension(x509.UnrecognizedExtension(OID_KEY_TAG, encoded_pk), critical=False)
-    builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, b"RSA"), critical=False)
+    builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, tag), critical=False)
     #builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, tag), critical=False)
 
     csr = builder.sign(private_key, hashes.SHA256(), backend=default_backend())
