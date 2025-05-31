@@ -716,82 +716,73 @@ async def pqc_encrypt_files(
 #    )
 async def pqc_decrypt_files(
     username: str,
-    file: UploadFile,
+    files: dict[str, bytes],
     db: AsyncSession,
-    public_key,  # 這裡是 sender 的 Dilithium public key
+    public_key,
 ):
-    if not file:
-        raise HTTPException(status_code=400, detail="No file uploaded")
-
-    # 1. 從 DB 取出使用者自己的 Kyber 私鑰
+    # 1. 從 DB 取得使用者 Kyber 私鑰
     kyber_pk, kyber_sk = await pqc.get_kyber_keys(username, db)
 
-    # 2. 讀取上傳 zip 並初始化
-    file_bytes = await file.read()
-    zip_buffer = BytesIO(file_bytes)
+    # 2. 解密 ChaCha 金鑰
+    chacha_key_name = f"{username}.key.enc"
+    if chacha_key_name not in files:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{username}.key.enc 加密過屬於您的解密鑰遺失"
+        )
+
+    chacha_key_enc = files[chacha_key_name]
+    try:
+        chacha_key = pqc.kyber_decapsulate(chacha_key_enc, kyber_sk)
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"無法解密 ChaCha 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
+        )
+
+    # 3. 解析簽章
+    if "signatures.json" not in files:
+        raise HTTPException(status_code=400, detail="簽名 signatures.json 遺失")
+
+    signatures = json.loads(files["signatures.json"])
 
     decrypted_files = []
 
-    with zipfile.ZipFile(zip_buffer, "r") as zip_file:
-        namelist = zip_file.namelist()
+    # 4. 驗簽並解密
+    for file_info in signatures:
+        enc_filename = file_info["filename"]
+        signature_b64 = file_info["signature"]
 
-        # 3.1 解密 shared key（ChaCha 金鑰）
-        chacha_key_name = f"{username}.key.enc"
-        if chacha_key_name not in namelist:
+        if enc_filename not in files:
             raise HTTPException(
-                status_code=400, detail=f"{chacha_key_name} 不存在，無法解密"
+                status_code=400, detail=f"加密檔 {enc_filename} 遺失"
             )
 
-        chacha_key_enc = zip_file.read(chacha_key_name)
-        try:
-            chacha_key = pqc.kyber_decapsulate(chacha_key_enc, kyber_sk)
-        except Exception as e:
+        enc_content = files[enc_filename]
+        signature = base64.b64decode(signature_b64)
+
+        # 驗簽
+        is_valid = pqc.dilithium_sign_verify(enc_content, public_key, signature)
+        if not is_valid:
             raise HTTPException(
                 status_code=400,
-                detail=f"無法解密 ChaCha 金鑰：{str(e)}",
+                detail=f"Signature verification失敗，{enc_filename} 可能遭到竄改",
             )
 
-        # 3.2 解析簽章
-        if "signatures.json" not in namelist:
-            raise HTTPException(status_code=400, detail="signatures.json 遺失")
+        # ChaCha20 解密 (前 12 bytes 為 nonce)
+        nonce = enc_content[:12]
+        ciphertext = enc_content[12:]
+        chacha = ChaCha20Poly1305(chacha_key)
+        plaintext = chacha.decrypt(nonce, ciphertext, associated_data=None)
 
-        signatures_json = zip_file.read("signatures.json")
-        signatures = json.loads(signatures_json)
+        # 移除 .enc 副檔名
+        orig_filename = (
+            enc_filename[:-4] if enc_filename.endswith(".enc") else enc_filename
+        )
 
-        for file_info in signatures:
-            enc_filename = file_info["filename"]
-            signature_b64 = file_info["signature"]
+        decrypted_files.append({"filename": orig_filename, "content": plaintext})
 
-            if enc_filename not in namelist:
-                raise HTTPException(status_code=400, detail=f"{enc_filename} 遺失")
-
-            enc_content = zip_file.read(enc_filename)
-            signature = base64.b64decode(signature_b64)
-
-            # 3.3 驗簽
-            if not pqc.dilithium_sign_verify(enc_content, public_key, signature):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"簽章驗證失敗，{enc_filename} 可能遭到竄改",
-                )
-
-            # 3.4 解密檔案
-            nonce = enc_content[:12]
-            ciphertext = enc_content[12:]
-            try:
-                chacha = ChaCha20Poly1305(chacha_key)
-                plaintext = chacha.decrypt(nonce, ciphertext, associated_data=None)
-            except Exception as e:
-                raise HTTPException(
-                    status_code=400, detail=f"{enc_filename} 解密失敗：{str(e)}"
-                )
-
-            orig_filename = (
-                enc_filename[:-4] if enc_filename.endswith(".enc") else enc_filename
-            )
-            decrypted_files.append({"filename": orig_filename, "content": plaintext})
-
-    # 4. 將所有解密檔案打包成 zip
+    # 5. 封裝回 zip
     output_zip_buffer = BytesIO()
     with zipfile.ZipFile(output_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
         for f in decrypted_files:
@@ -801,7 +792,7 @@ async def pqc_decrypt_files(
     return StreamingResponse(
         output_zip_buffer,
         media_type="application/x-zip-compressed",
-        headers={"Content-Disposition": "attachment; filename=decrypted_files.zip"},
+        headers={"Content-Disposition": f"attachment; filename=decrypted_files.zip"},
     )
 
 @app.post("/api/encrypt")
