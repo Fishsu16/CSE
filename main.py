@@ -645,7 +645,7 @@ async def encrypt_files(
 @app.post("/api/decrypt")
 async def decrypt_files(
     username: str = Form(...),
-    files: UploadFile = File(...),
+    file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     if not files:
@@ -680,8 +680,8 @@ async def decrypt_files(
         
         # 3.2 依據演算法解密
         if encrypt_algorithm == "RSA":
-            decrypt_zip = await aes_decrypt_files(username, files, db, sender_pk)
+            decrypt_zip = await aes_decrypt_files(username, file, db, sender_pk)
         else:
-            decrypt_zip = await pqc_decrypt_files(username, files, db, sender_pk)
+            decrypt_zip = await pqc_decrypt_files(username, file, db, sender_pk)
 
         return decrypt_zip
