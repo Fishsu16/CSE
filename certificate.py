@@ -140,7 +140,8 @@ def verify_cert(client_cert):
 
     return {"status": "success",
             "message": "Certificate is valid and trusted.",
-            "public_key": public_key}
+            "public_key": public_key,
+            "sign_tag": sign_tag}
 
 
 

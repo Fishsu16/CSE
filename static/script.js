@@ -127,14 +127,15 @@ uploadButton.addEventListener("click", () => {
 
   if (confirm("Are you sure you want to encrypt these files?")) {
     const formData = new FormData();
+    formData.append('algorithm', "AES");
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
 
     formData.append("username", currentUser);
     formData.append("recipients", JSON.stringify(addedUsers));
-    //fetch(`${backendUrl}/api/encrypt`, {
-    fetch(`${backendUrl}/api/pqc_encrypt`, {
+    fetch(`${backendUrl}/api/encrypt`, {
+    //fetch(`${backendUrl}/api/pqc_encrypt`, {
       method: "POST",
       body: formData,
     })
