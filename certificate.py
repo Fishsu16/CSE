@@ -18,17 +18,30 @@ api_url = "https://certificate-ed4n.onrender.com/api/issue"
 #####################################################################################
 #                                   RSA Certificate                                 #
 #####################################################################################
-def gencsr(user_sk) -> List[Dict[str, bytes]]:
+# 自訂 OID（須符合規範，可從企業 OID 範圍或測試 OID 開始）
+OID_SIGN_TAG = ObjectIdentifier("1.3.6.1.4.1.55555.1.1")  # 企業 OID 下的自定欄位
+OID_KEY_TAG = ObjectIdentifier("1.3.6.1.4.1.55555.1.2")
+
+def gencsr(user_sk, user_pk, tag) -> List[Dict[str, bytes]]:
+
     private_key = load_der_private_key(user_sk, password=None, backend=default_backend())
     # === 1. 建立 CSR ===
-    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+    subject = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, u"TW"),
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Hsinchu"),
         x509.NameAttribute(NameOID.LOCALITY_NAME, u"East"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"NYCU"),
         x509.NameAttribute(NameOID.COMMON_NAME, u"Oasis_Star"),
-    ])).sign(private_key, hashes.SHA256(), backend=default_backend())
+    ]))
 
+    builder = x509.CertificateSigningRequestBuilder().subject_name(subject)
+
+    # 加入自訂 Extended Info
+    builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, b"RSA"), critical=False)
+    builder = builder.add_extension(x509.UnrecognizedExtension(OID_KEY_TAG, user_pk))
+    #builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, tag), critical=False)
+
+    csr = builder.sign(private_key, hashes.SHA256(), backend=default_backend())
     csr_pem = csr.public_bytes(serialization.Encoding.PEM)
 
     # === 2. 發送 CSR 給 CA Server ===
@@ -71,6 +84,8 @@ def verify_certificate_chain(cert: Certificate, issuer: Certificate):
 
 def verify_cert(client_cert):
     try:
+        if isinstance(b"RSA", x509.UnrecognizedExtension)
+    try:
         # 從 CA server 下載 intermediate cert
         intermediate_cert = load_cert_from_url("https://certificate-ed4n.onrender.com/api/intermediate_cert")
 
@@ -89,11 +104,23 @@ def verify_cert(client_cert):
             raise HTTPException(status_code=400, detail="Client certificate is not valid at this time")
 
         # 取得 public key 並轉為 PEM 格式字串
-        public_key = client_cert.public_key()
-        public_key_pem = public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        )
+        #public_key = client_cert.public_key()
+        #public_key_pem = public_key.public_bytes(
+        #    encoding=serialization.Encoding.PEM,
+        #    format=serialization.PublicFormat.SubjectPublicKeyInfo
+        #)
+        try:
+            ext = client_cert.extensions.get_extension_for_oid(OID_SIGN_TAG)
+            sign_tag = ext.value.value.decode("utf-8", errors="ignore")#value = ext.value.value  # bytes
+            #print("🔖 Extended Info (raw bytes):", value)
+            #print("📝 Extended Info (decoded):", value.decode("utf-8", errors="ignore"))
+            ext = client_cert.extensions.get_extension_for_oid(OID_KEY_TAG)
+            public_key = ext.value.value
+            #print("🔖 Extended Info (raw bytes):", value)
+            #print("📝 Extended Info (decoded):", value.decode("utf-8", errors="ignore"))
+        except x509.ExtensionNotFound:
+            raise HTTPException(status_code=400, detail=f"certificate decode public key error: {e}")
+            #print("❌ 找不到自訂 Extended Info")
 
     except requests.HTTPError:
         raise HTTPException(status_code=502, detail="Failed to download intermediate certificate from CA server")
@@ -106,7 +133,7 @@ def verify_cert(client_cert):
 
     return {"status": "success",
             "message": "Certificate is valid and trusted.",
-            "public_key": public_key_pem}
+            "public_key": public_key}
 
 
 

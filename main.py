@@ -212,7 +212,7 @@ async def encrypt_files(
     #    format=serialization.PublicFormat.SubjectPublicKeyInfo,
     #)
     try:
-        cert = certificate.gencsr(user_sk)
+        cert = certificate.gencsr(user_sk, user_pk, b"RSA")
     except Exception as e:
         import traceback
         print("[/api/encrypt] Encryption failed:", e)
@@ -289,15 +289,16 @@ async def decrypt_files(
             if verify_status["status"] != "success":
                 raise HTTPException(status_code=400, detail="Certificate驗證失敗")
             else:
-                public_key_pem = verify_status["public_key"]
+                #public_key_pem = verify_status["public_key"]
+                public_key = verify_status["public_key"]
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
-        try:
-            public_key = serialization.load_pem_public_key(
-                public_key_pem, backend=default_backend()
-            )
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
+        #try:
+        #    public_key = serialization.load_pem_public_key(
+        #        public_key_pem, backend=default_backend()
+        #    )
+        #except Exception as e:
+        #    raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
 
         # 讀 verify.key (PEM 格式公鑰)
         #if "verify.key" not in namelist:
