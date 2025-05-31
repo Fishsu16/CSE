@@ -212,7 +212,8 @@ async def encrypt_files(
     #    format=serialization.PublicFormat.SubjectPublicKeyInfo,
     #)
     try:
-        cert = certificate.gencsr(user_sk, user_pk, b"RSA")
+        user_pk_der = load_der_public_key(user_pk)
+        cert = certificate.gencsr(user_sk, user_pk_der, b"RSA")
     except Exception as e:
         import traceback
         print("[/api/encrypt] Encryption failed:", e)
@@ -358,6 +359,7 @@ async def decrypt_files(
             signature = base64.b64decode(signature_b64)
 
             # 驗簽
+            # YU modified
             try:
                 public_key.verify(
                     signature,
