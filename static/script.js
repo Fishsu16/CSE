@@ -127,7 +127,7 @@ uploadButton.addEventListener("click", () => {
 
   if (confirm("Are you sure you want to encrypt these files?")) {
     const formData = new FormData();
-    formData.append('algorithm', "AES");
+    formData.append('algorithm', "AES"); //for test
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
@@ -135,7 +135,6 @@ uploadButton.addEventListener("click", () => {
     formData.append("username", currentUser);
     formData.append("recipients", JSON.stringify(addedUsers));
     fetch(`${backendUrl}/api/encrypt`, {
-    //fetch(`${backendUrl}/api/pqc_encrypt`, {
       method: "POST",
       body: formData,
     })
@@ -201,7 +200,6 @@ decryptButton.addEventListener("click", () => {
     formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
     formData.append("username", currentUser);
     fetch(`${backendUrl}/api/decrypt`, {
-    //fetch(`${backendUrl}/api/pqc_decrypt`, {
       method: "POST",
       body: formData,
     })
