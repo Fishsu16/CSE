@@ -468,6 +468,7 @@ async def pqc_encrypt_files(
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
                 sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+                sub_zip.writestr("pqc", enc_ChaCha_key)
 
             sub_zip_buffer.seek(0)
             outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
@@ -644,7 +645,6 @@ async def encrypt_files(
 @app.post("/api/decrypt")
 async def decrypt_files(
     username: str = Form(...),
-    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
 ):
