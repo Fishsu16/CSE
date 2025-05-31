@@ -516,7 +516,7 @@ async def pqc_decrypt_files(
             if verify_status["status"] != "success":
                 raise HTTPException(status_code=400, detail="Certificate驗證失敗")
             else:
-                public_key = verify_status["public_key"]
+                sender_dili_pk = verify_status["public_key"]
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
         #try:
