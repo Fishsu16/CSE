@@ -133,8 +133,8 @@ uploadButton.addEventListener("click", () => {
 
     formData.append("username", currentUser);
     formData.append("recipients", JSON.stringify(addedUsers));
-    //fetch(`${backendUrl}/api/encrypt`, {
-    fetch(`${backendUrl}/api/pqc_encrypt`, {
+    fetch(`${backendUrl}/api/encrypt`, {
+    //fetch(`${backendUrl}/api/pqc_encrypt`, {
       method: "POST",
       body: formData,
     })
@@ -199,8 +199,8 @@ decryptButton.addEventListener("click", () => {
     const formData = new FormData();
     formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
     formData.append("username", currentUser);
-    //fetch(`${backendUrl}/api/decrypt`, {
-    fetch(`${backendUrl}/api/pqc_decrypt`, {
+    fetch(`${backendUrl}/api/decrypt`, {
+    //fetch(`${backendUrl}/api/pqc_decrypt`, {
       method: "POST",
       body: formData,
     })
