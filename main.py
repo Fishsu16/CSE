@@ -449,7 +449,6 @@ async def pqc_encrypt_files(
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_ChaCha_key)
                 sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
-                sub_zip.writestr("verify.key", dili_pk)
 
             sub_zip_buffer.seek(0)
             outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
@@ -503,12 +502,29 @@ async def pqc_decrypt_files(
         namelist = zip_file.namelist()
 
         # 3.1 檢驗憑證與抽取sender public key
-        if "verify.key" not in namelist:
-            raise HTTPException(
-                status_code=400, detail=f"verify.key 解密shared_key的密鑰遺失"
+        #if "verify.key" not in namelist:
+        #    raise HTTPException(
+        #        status_code=400, detail=f"verify.key 解密shared_key的密鑰遺失"
+        #    )
+        #sender_dili_pk = zip_file.read("verify.key")
+        if "certificate.pem" not in namelist:
+            raise HTTPException(status_code=400, detail="certificate遺失")
+        cert = zip_file.read("certificate.pem")
+        cert_obj = x509.load_pem_x509_certificate(cert, default_backend())
+        try:
+            verify_status = certificate.verify_cert(cert_obj)
+            if verify_status["status"] != "success":
+                raise HTTPException(status_code=400, detail="Certificate驗證失敗")
+            else:
+                public_key_pem = verify_status["public_key"]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Verify failed: {e}")
+        try:
+            public_key = serialization.load_pem_public_key(
+                public_key_pem, backend=default_backend()
             )
-        sender_dili_pk = zip_file.read("verify.key")
-        #sender_dili_key = bytes.fromhex(sender_dili_key_hex)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Load sender public key failed: {e}")
 
         # 3.2 ChaCha20 encrypt key
         ChaCha_key_name = f"{username}.key.enc"
