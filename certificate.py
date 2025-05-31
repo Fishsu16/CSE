@@ -83,8 +83,8 @@ def verify_certificate_chain(cert: Certificate, issuer: Certificate):
     )
 
 def verify_cert(client_cert):
-    try:
-        if isinstance(b"RSA", x509.UnrecognizedExtension)
+    #try:
+        #if isinstance(b"RSA", x509.UnrecognizedExtension):
     try:
         # 從 CA server 下載 intermediate cert
         intermediate_cert = load_cert_from_url("https://certificate-ed4n.onrender.com/api/intermediate_cert")
