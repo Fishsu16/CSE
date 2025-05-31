@@ -26,13 +26,13 @@ def gencsr(user_sk, user_pk, tag) -> List[Dict[str, bytes]]:
 
     private_key = load_der_private_key(user_sk, password=None, backend=default_backend())
     # === 1. 建立 CSR ===
-    subject = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+    subject = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, u"TW"),
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Hsinchu"),
         x509.NameAttribute(NameOID.LOCALITY_NAME, u"East"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"NYCU"),
         x509.NameAttribute(NameOID.COMMON_NAME, u"Oasis_Star"),
-    ]))
+    ])
 
     builder = x509.CertificateSigningRequestBuilder().subject_name(subject)
 
