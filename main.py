@@ -634,9 +634,9 @@ async def encrypt_files(
         raise HTTPException(status_code=400, detail="No files uploaded")
     
     if algorithm == "AES":
-        encrypt_zip = pqc_encrypt_files(username, recipients, files, db)
+        encrypt_zip = await pqc_encrypt_files(username, recipients, files, db)
     else:
-        encrypt_zip = aes_encrypt_files(username, recipients, files, db)
+        encrypt_zip = await aes_encrypt_files(username, recipients, files, db)
     
     return encrypt_zip
 
@@ -680,8 +680,8 @@ async def decrypt_files(
         
         # 3.2 依據演算法解密
         if encrypt_algorithm == "RSA":
-            decrypt_zip = aes_decrypt_files(username, files, db, sender_pk)
+            decrypt_zip = await aes_decrypt_files(username, files, db, sender_pk)
         else:
-            decrypt_zip = pqc_decrypt_files(username, files, db, sender_pk)
+            decrypt_zip = await pqc_decrypt_files(username, files, db, sender_pk)
 
         return decrypt_zip
