@@ -14,11 +14,6 @@ import base64
 
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
-
-
-#####################################################################################
-#                                   RSA Certificate                                 #
-#####################################################################################
 # 自訂 OID（須符合規範，可從企業 OID 範圍或測試 OID 開始）
 OID_SIGN_TAG = ObjectIdentifier("1.3.6.1.4.1.55555.1.1")  # 企業 OID 下的自定欄位
 OID_KEY_TAG = ObjectIdentifier("1.3.6.1.4.1.55555.1.2")
@@ -142,62 +137,3 @@ def verify_cert(client_cert):
             "message": "Certificate is valid and trusted.",
             "public_key": public_key,
             "sign_tag": sign_tag}
-
-
-
-#####################################################################################
-#                               Dilithium Certificate                               #
-#####################################################################################
-#def dilithium_gencsr(user_sk) -> List[Dict[str, bytes]]:
-#    # 自訂一個 OID（不能和已定義的衝突）
-#    dilithium_oid = ObjectIdentifier("1.3.6.1.4.1.99999.1.1")
-#
-#    # 建立憑證
-#    builder = x509.CertificateBuilder().subject_name(
-#        x509.Name([
-#            x509.NameAttribute(NameOID.COMMON_NAME, u'example.com'),
-#        ])
-#    ).issuer_name(
-#        x509.Name([
-#            x509.NameAttribute(NameOID.COMMON_NAME, u'example CA'),
-#        ])
-#    ).public_key(
-#        x509.load_der_public_key(dilithium_pubkey, backend=default_backend())  # 若你轉成 DER 格式
-#    ).serial_number(
-#        x509.random_serial_number()
-#    ).not_valid_before(
-#        datetime.datetime.utcnow()
-#    ).not_valid_after(
-#        datetime.datetime.utcnow() + datetime.timedelta(days=365)
-#    )
-#
-#
-#    private_key = load_der_private_key(user_sk, password=None, backend=default_backend())
-#    # === 1. 建立 CSR ===
-#    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-#        x509.NameAttribute(NameOID.COUNTRY_NAME, u"TW"),
-#        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Hsinchu"),
-#        x509.NameAttribute(NameOID.LOCALITY_NAME, u"East"),
-#        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"NYCU"),
-#        x509.NameAttribute(NameOID.COMMON_NAME, u"Oasis_Star"),
-#    ])).sign(private_key, hashes.SHA256(), backend=default_backend())
-#
-#    csr_pem = csr.public_bytes(serialization.Encoding.PEM)
-#
-#    # === 2. 發送 CSR 給 CA Server ===
-#    response = requests.post(
-#        api_url,
-#        files={"file": ("csr.pem", csr_pem, "application/x-pem-file")},
-#    )
-#
-#    # === 3. 處理回應 ===
-#    certificate_files = []
-#    if response.status_code == 200:
-#        filename = "certificate.pem"
-#        content = response.content
-#        certificate_files = {"filename": filename, "content": content}
-#        print("✅ 憑證已簽發並儲存為 certificate.pem")
-#    else:
-#        raise HTTPException(status_code=response.status_code, detail=response.content.decode('utf-8'))
-#
-#    return [certificate_files]

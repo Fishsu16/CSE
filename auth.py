@@ -8,7 +8,6 @@ import base64
 import qrcode
 from io import BytesIO
 import hashlib
-#test
 
 import kms
 from models import User, get_db
@@ -53,7 +52,6 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     user_pk, user_sk = kms.create_user_keys(tag=f"user-key-{username}")
     # YU modified
     kyber_pk, kyber_sk = pqc.kyber_keygen()
-    #kyber_pk, kyber_sk = "", ""
     dilithium_pk, dilithium_sk = pqc.dilithium_keygen()
     new_user = User(
         username=username,
