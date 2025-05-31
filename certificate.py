@@ -10,6 +10,7 @@ import requests
 from fastapi import HTTPException
 from pydantic import BaseModel
 import datetime
+import base64
 
 api_url = "https://certificate-ed4n.onrender.com/api/issue"
 
@@ -37,8 +38,9 @@ def gencsr(user_sk, user_pk, tag) -> List[Dict[str, bytes]]:
     builder = x509.CertificateSigningRequestBuilder().subject_name(subject)
 
     # 加入自訂 Extended Info
+    encoded_pk = base64.b64encode(user_pk)
+    builder = builder.add_extension(x509.UnrecognizedExtension(OID_KEY_TAG, encoded_pk), critical=False)
     builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, b"RSA"), critical=False)
-    builder = builder.add_extension(x509.UnrecognizedExtension(OID_KEY_TAG, user_pk))
     #builder = builder.add_extension(x509.UnrecognizedExtension(OID_SIGN_TAG, tag), critical=False)
 
     csr = builder.sign(private_key, hashes.SHA256(), backend=default_backend())
@@ -115,7 +117,8 @@ def verify_cert(client_cert):
             #print("🔖 Extended Info (raw bytes):", value)
             #print("📝 Extended Info (decoded):", value.decode("utf-8", errors="ignore"))
             ext = client_cert.extensions.get_extension_for_oid(OID_KEY_TAG)
-            public_key = ext.value.value
+            public_key_encoded = ext.value.value
+            public_key = base64.b64decode(public_key_encoded)
             #print("🔖 Extended Info (raw bytes):", value)
             #print("📝 Extended Info (decoded):", value.decode("utf-8", errors="ignore"))
         except x509.ExtensionNotFound:
