@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509.base import Certificate
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.serialization import load_der_private_key
+from cryptography.hazmat.primitives.serialization import load_der_private_key, load_der_public_key
 import requests
 from fastapi import HTTPException
 from pydantic import BaseModel
