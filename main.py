@@ -645,7 +645,7 @@ async def encrypt_files(
 @app.post("/api/decrypt")
 async def decrypt_files(
     username: str = Form(...),
-    files: List[UploadFile] = File(...),
+    files: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     if not files:
